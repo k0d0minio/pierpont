@@ -5,6 +5,9 @@ import { Heading } from "../../components/heading.jsx";
 import { Table, TableHead, TableBody, TableRow, TableHeader, TableCell } from "../../components/table.jsx";
 import { Badge } from "../../components/badge.jsx";
 
+// Avoid build-time prerender hitting the database on Vercel
+export const dynamic = 'force-dynamic'
+
 function getBrusselsYmd(date = new Date()) {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Europe/Brussels",

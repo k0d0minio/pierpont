@@ -1,4 +1,5 @@
 import prisma from "../../../lib/prisma";
+export const dynamic = 'force-dynamic'
 import { createPDJGroup, deletePDJGroup, createHotelGuest, deleteHotelGuest, createGolfEntry, deleteGolfEntry, createEventEntry, deleteEventEntry } from "./actions";
 import { Heading, Subheading } from "../../../../components/heading.jsx";
 import { Badge } from "../../../../components/badge.jsx";
