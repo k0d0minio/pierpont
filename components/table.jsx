@@ -30,7 +30,13 @@ export function TableHead({ className, ...props }) {
 }
 
 export function TableBody({ className, ...props }) {
-  return <tbody {...props} className={clsx('grid grid-cols-1 gap-4 sm:table-row-group sm:gap-0', className)} />
+  let { dense } = useContext(TableContext)
+  return (
+    <tbody
+      {...props}
+      className={clsx('grid grid-cols-1', dense ? 'gap-2' : 'gap-4', 'sm:table-row-group sm:gap-0', className)}
+    />
+  )
 }
 
 const TableRowContext = createContext({
@@ -40,7 +46,7 @@ const TableRowContext = createContext({
 })
 
 export function TableRow({ href, target, title, className, ...props }) {
-  let { striped } = useContext(TableContext)
+  let { striped, dense } = useContext(TableContext)
 
   return (
     <TableRowContext.Provider value={{ href, target, title }}>
@@ -49,7 +55,11 @@ export function TableRow({ href, target, title, className, ...props }) {
         className={clsx(
           className,
           // Mobile: show rows as cards; Desktop: keep table rows
-          'block rounded-xl border border-zinc-950/10 bg-white/70 p-4 shadow-sm dark:border-white/10 dark:bg-white/5 sm:table-row sm:rounded-none sm:border-0 sm:p-0 sm:shadow-none',
+          clsx(
+            'block rounded-xl border border-zinc-950/10 bg-white/70 shadow-sm dark:border-white/10 dark:bg-white/5',
+            dense ? 'p-3' : 'p-4',
+            'sm:table-row sm:rounded-none sm:border-0 sm:p-0 sm:shadow-none'
+          ),
           href &&
             'has-[[data-row-link][data-focus]]:outline-2 has-[[data-row-link][data-focus]]:-outline-offset-2 has-[[data-row-link][data-focus]]:outline-blue-500 dark:focus-within:bg-white/2.5',
           striped && 'sm:even:bg-zinc-950/2.5 dark:sm:even:bg-white/2.5',
