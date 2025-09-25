@@ -44,7 +44,7 @@ export default async function DayPage({ params }) {
       
       <div className="space-y-6">
         <section>
-          <Subheading level={2} className="mb-2">PDJ Groups</Subheading>
+          <Subheading level={2} className="mb-2">Breakfast</Subheading>
           <div className="flex flex-wrap gap-2">
             {day?.pdjGroups?.length ? day.pdjGroups.map((g) => (
               <Badge key={g.id}>{g.size}{g.label ? ` ${g.label}` : ''}</Badge>

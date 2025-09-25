@@ -105,14 +105,14 @@ export default async function Home() {
         <Heading level={1}>Horeca Weekly Board</Heading>
         <EditGate isEditor={editor} />
       </div>
-      <Table grid striped>
+      <Table grid dense striped>
         <TableHead>
           <TableRow>
             <TableHeader className="w-[28%]">Date</TableHeader>
-            <TableHeader>PDJ</TableHeader>
-            <TableHeader className="hidden sm:table-cell">HTL Guests</TableHeader>
+            <TableHeader>Breakfast</TableHeader>
+            <TableHeader className="hidden sm:table-cell">Hotel Guests</TableHeader>
             <TableHeader className="hidden sm:table-cell">Golf</TableHeader>
-            <TableHeader className="hidden sm:table-cell">Event</TableHeader>
+            <TableHeader className="hidden sm:table-cell">Events</TableHeader>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -127,22 +127,22 @@ export default async function Home() {
                   <div className="flex items-center gap-2">
                     <span>{formatDayDisplay(d.dateISO)}</span>
                     {golfTitle ? <Badge color="emerald">Golf</Badge> : null}
-                    {eventTitle ? <Badge color="sky">Event</Badge> : null}
+                    {eventTitle ? <Badge color="sky">Events</Badge> : null}
                   </div>
                 </TableCell>
-                <TableCell label="PDJ">
+                <TableCell label="Breakfast">
                   <div className="flex items-center gap-2">
                     <Badge color={pdj.ambiguous ? "amber" : "zinc"}>{pdj.pattern}</Badge>
                     <span className="text-zinc-500">Total {pdj.total}</span>
                   </div>
                 </TableCell>
-                <TableCell label="HTL Guests">
+                <TableCell label="Hotel Guests">
                   {hotel > 0 ? <Badge color="zinc">{hotel}</Badge> : <span className="text-zinc-500">—</span>}
                 </TableCell>
                 <TableCell label="Golf">
                   {golfTitle ? <span>{golfTitle}</span> : <span className="text-zinc-500">—</span>}
                 </TableCell>
-                <TableCell label="Event">
+                <TableCell label="Events">
                   {eventTitle ? <span>{eventTitle}</span> : <span className="text-zinc-500">—</span>}
                 </TableCell>
               </TableRow>
