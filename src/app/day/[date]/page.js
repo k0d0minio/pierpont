@@ -65,7 +65,7 @@ export default async function DayPage({ params }) {
               <ul className="list-disc pl-5 text-sm/6">
                 {day.pdjGroups.map((g) => (
                   <li key={g.id} className="flex items-center gap-2">
-                    <span>#{g.id} {g.size}{g.label ? ` ${g.label}` : ''}</span>
+                    <span>{g.size}{g.label ? ` ${g.label}` : ''}</span>
                     {editor ? (
                       <form action={deletePDJGroup}>
                         <input type="hidden" name="id" value={g.id} />
