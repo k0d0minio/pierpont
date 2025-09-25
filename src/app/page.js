@@ -123,26 +123,26 @@ export default async function Home() {
             const eventTitle = d.eventEntries?.[0]?.title || "";
             return (
               <TableRow key={d.id} href={`/day/${formatYmd(d.dateISO)}`}>
-                <TableCell>
+                <TableCell label="Date">
                   <div className="flex items-center gap-2">
                     <span>{formatDayDisplay(d.dateISO)}</span>
                     {golfTitle ? <Badge color="emerald">Golf</Badge> : null}
                     {eventTitle ? <Badge color="sky">Event</Badge> : null}
                   </div>
                 </TableCell>
-                <TableCell>
+                <TableCell label="PDJ">
                   <div className="flex items-center gap-2">
                     <Badge color={pdj.ambiguous ? "amber" : "zinc"}>{pdj.pattern}</Badge>
                     <span className="text-zinc-500">Total {pdj.total}</span>
                   </div>
                 </TableCell>
-                <TableCell className="hidden sm:table-cell">
+                <TableCell label="HTL Guests">
                   {hotel > 0 ? <Badge color="zinc">{hotel}</Badge> : <span className="text-zinc-500">—</span>}
                 </TableCell>
-                <TableCell className="hidden sm:table-cell">
+                <TableCell label="Golf">
                   {golfTitle ? <span>{golfTitle}</span> : <span className="text-zinc-500">—</span>}
                 </TableCell>
-                <TableCell className="hidden sm:table-cell">
+                <TableCell label="Event">
                   {eventTitle ? <span>{eventTitle}</span> : <span className="text-zinc-500">—</span>}
                 </TableCell>
               </TableRow>
