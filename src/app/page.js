@@ -105,7 +105,7 @@ export default async function Home() {
         <Heading level={1}>Horeca Weekly Board</Heading>
         <EditGate isEditor={editor} />
       </div>
-      <Table striped>
+      <Table grid striped>
         <TableHead>
           <TableRow>
             <TableHeader className="w-[28%]">Date</TableHeader>
