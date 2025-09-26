@@ -77,6 +77,30 @@ Display helpers (computed in code):
 - Env vars: `DATABASE_URL` and `NEXT_PUBLIC_EDIT_CODE` in Vercel Project Settings.
 - Migrations: run `prisma migrate deploy` during deploy (Vercel Build or postinstall).
 
+### Database: Supabase-Compatible Schema (D&D 5e)
+
+For the D&D 5e Companion workstream, this repo now includes SQL to create:
+
+- `public.profiles`, `public.characters`, `public.character_equipment`, `public.character_spells`, `public.character_notes`
+- RLS policies so users only access their own rows
+- Indexes for performance and `updated_at` triggers
+
+Files:
+
+- Migration: `prisma/migrations/20250926100000_supabase_core_schema/migration.sql`
+- RLS tests: `prisma/rls_tests.sql`
+
+Run locally:
+
+1. Ensure Docker Postgres is running (or `docker compose up -d postgres`).
+2. Export `DATABASE_URL=postgresql://postgres:password@localhost:5432/pierpont?schema=public`.
+3. Deploy: `npm run prisma:deploy`.
+4. Test RLS in psql: `npm run db:rls:test`.
+
+Notes:
+
+- Migration is idempotent and includes local fallbacks for `auth.users` and `auth.uid()` so it works on plain Postgres and Supabase.
+
 ### Milestones & Estimates (calendar time)
 1) Prisma setup (schema with normalized tables, client, migrations) + seed Days: 0.5 day
 2) Board read from DB with aggregation helpers: 0.5 day

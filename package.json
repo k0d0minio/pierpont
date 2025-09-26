@@ -12,7 +12,8 @@
     "prisma:migrate": "prisma migrate dev --name init",
     "prisma:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
-    "seed": "node prisma/seed.js"
+    "seed": "node prisma/seed.js",
+    "db:rls:test": "psql \"$DATABASE_URL\" -f prisma/rls_tests.sql"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.8",
