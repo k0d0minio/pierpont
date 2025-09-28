@@ -40,7 +40,7 @@ export default async function DayPage({ params }) {
         <DayNav dateParam={dateParam} />
       </div>
       <Heading level={1} className="mb-4 text-xl sm:text-2xl">{formatDayDisplay(date)}</Heading>
-      <div className="text-sm text-zinc-500 mb-4 sm:mb-6">Swipe left/right to navigate</div>
+      <div className="text-sm text-zinc-600 mb-4 sm:mb-6">Swipe left/right to navigate</div>
       
       <div className="space-y-6">
         <section>
@@ -48,7 +48,7 @@ export default async function DayPage({ params }) {
           <div className="flex flex-wrap gap-2">
             {day?.pdjGroups?.length ? day.pdjGroups.map((g) => (
               <Badge key={g.id}>{g.size}{g.label ? ` ${g.label}` : ''}</Badge>
-            )) : <span className="text-zinc-500">None</span>}
+            )) : <span className="text-zinc-600">None</span>}
           </div>
           <div className="mt-4">
             {editor ? (
@@ -84,7 +84,7 @@ export default async function DayPage({ params }) {
           <div className="flex flex-wrap gap-2">
             {day?.hotelGuestEntries?.length ? day.hotelGuestEntries.map((g) => (
               <Badge key={g.id}>{g.size}{g.source ? ` ${g.source}` : ''}</Badge>
-            )) : <span className="text-zinc-500">None</span>}
+            )) : <span className="text-zinc-600">None</span>}
           </div>
           {editor ? (
             <div className="mt-4">
@@ -128,7 +128,7 @@ export default async function DayPage({ params }) {
                   </form>
                 ) : null}
               </li>
-            )) : <span className="text-zinc-500">None</span>}
+            )) : <span className="text-zinc-600">None</span>}
           </ul>
           {editor ? (
             <div className="mt-3">
@@ -157,7 +157,7 @@ export default async function DayPage({ params }) {
                   </form>
                 ) : null}
               </li>
-            )) : <span className="text-zinc-500">None</span>}
+            )) : <span className="text-zinc-600">None</span>}
           </ul>
           {editor ? (
             <div className="mt-3">

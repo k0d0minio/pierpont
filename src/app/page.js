@@ -137,17 +137,17 @@ export default async function Home() {
                 <TableCell label="Breakfast">
                   <div className="flex items-center gap-2">
                     <Badge color={pdj.ambiguous ? "amber" : "zinc"}>{pdj.pattern}</Badge>
-                    <span className="text-zinc-500">Total {pdj.total}</span>
+                    <span className="text-zinc-600">Total {pdj.total}</span>
                   </div>
                 </TableCell>
                 <TableCell label="Hotel Guests">
-                  {hotel > 0 ? <Badge color="zinc">{hotel}</Badge> : <span className="text-zinc-500">—</span>}
+                  {hotel > 0 ? <Badge color="zinc">{hotel}</Badge> : <span className="text-zinc-600">—</span>}
                 </TableCell>
                 <TableCell label="Golf">
-                  {golfTitle ? <span>{golfTitle}</span> : <span className="text-zinc-500">—</span>}
+                  {golfTitle ? <span>{golfTitle}</span> : <span className="text-zinc-600">—</span>}
                 </TableCell>
                 <TableCell label="Events">
-                  {eventTitle ? <span>{eventTitle}</span> : <span className="text-zinc-500">—</span>}
+                  {eventTitle ? <span>{eventTitle}</span> : <span className="text-zinc-600">—</span>}
                 </TableCell>
               </TableRow>
             );
