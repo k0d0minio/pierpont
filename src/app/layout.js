@@ -51,10 +51,26 @@ export const dynamic = 'force-dynamic'
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function(){
+                try {
+                  var storageKey = 'theme';
+                  var stored = localStorage.getItem(storageKey);
+                  var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                  var isDark = stored ? stored === 'dark' : prefersDark;
+                  var root = document.documentElement;
+                  if (isDark) root.classList.add('dark'); else root.classList.remove('dark');
+                } catch (_) {}
+              })();
+            `,
+          }}
+        />
         {children}
       </body>
     </html>

@@ -1,6 +1,7 @@
 import prisma from "../lib/prisma";
 import EditGate from "./EditGate.jsx";
 import { isEditor } from "./actions/auth";
+import ThemeToggle from "../../components/theme-toggle.jsx";
 import { Heading } from "../../components/heading.jsx";
 import { Table, TableHead, TableBody, TableRow, TableHeader, TableCell } from "../../components/table.jsx";
 import { Badge } from "../../components/badge.jsx";
@@ -103,7 +104,10 @@ export default async function Home() {
     <div className="font-sans min-h-screen p-6 sm:p-10">
       <div className="flex items-center justify-between mb-4">
         <Heading level={1}>Horeca Weekly Board</Heading>
-        <EditGate isEditor={editor} />
+        <div className="flex items-center gap-3">
+          <ThemeToggle />
+          <EditGate isEditor={editor} />
+        </div>
       </div>
       <Table grid dense striped>
         <TableHead>
