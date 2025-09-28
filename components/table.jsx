@@ -26,7 +26,7 @@ export function Table({ bleed = false, dense = false, grid = false, striped = fa
 }
 
 export function TableHead({ className, ...props }) {
-  return <thead {...props} className={clsx(className, 'hidden text-zinc-500 dark:text-zinc-400 sm:table-header-group')} />
+  return <thead {...props} className={clsx(className, 'hidden text-zinc-600 dark:text-zinc-400 sm:table-header-group')} />
 }
 
 export function TableBody({ className, ...props }) {
@@ -116,7 +116,7 @@ export function TableCell({ className, children, label, ...props }) {
           className="absolute inset-0 focus:outline-hidden"
         />
       )}
-      {label ? <div className="mb-1 text-xs font-medium text-zinc-500 sm:hidden">{label}</div> : null}
+      {label ? <div className="mb-1 text-xs font-medium text-zinc-600 sm:hidden">{label}</div> : null}
       {children}
     </td>
   )
