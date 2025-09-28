@@ -5,10 +5,15 @@
   --foreground: #171717;
 }
 
-/* Enable class-based theming overrides */
-.dark {
+/* Enable class-based theming overrides with higher specificity than :root */
+:root.dark {
   --background: #0a0a0a;
   --foreground: #ededed;
+}
+
+:root.light {
+  --background: #ffffff;
+  --foreground: #171717;
 }
 
 @theme inline {
