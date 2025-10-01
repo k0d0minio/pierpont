@@ -8,6 +8,7 @@ import { Button } from "../../../../components/button.jsx";
 import { Dialog, DialogTitle, DialogBody, DialogActions } from "../../../../components/dialog.jsx";
 import { isEditor } from "../../actions/auth";
 import DayNav from "./DayNav.jsx";
+import DaySwipe from "./DaySwipe.jsx";
 
 function formatDayDisplay(date) {
   const weekday = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Brussels", weekday: "long" }).format(date);
@@ -37,12 +38,12 @@ export default async function DayPage({ params }) {
   return (
     <div className="font-sans min-h-screen p-6 sm:p-10">
       <div className="mb-3">
-        <DayNav dateParam={dateParam} />
+        <DayNav />
       </div>
-      <Heading level={1} className="mb-4 text-xl sm:text-2xl">{formatDayDisplay(date)}</Heading>
-      <div className="text-sm text-zinc-500 mb-4 sm:mb-6">Swipe left/right to navigate</div>
-      
-      <div className="space-y-6">
+      <DaySwipe dateParam={dateParam}>
+        <Heading level={1} className="mb-4 text-xl sm:text-2xl">{formatDayDisplay(date)}</Heading>
+        <div className="text-sm text-zinc-500 mb-4 sm:mb-6">Swipe left/right to navigate</div>
+        <div className="space-y-6">
         <section>
           <Subheading level={2} className="mb-2">Breakfast</Subheading>
           <div className="flex flex-wrap gap-2">
@@ -174,7 +175,8 @@ export default async function DayPage({ params }) {
             </div>
           ) : null}
         </section>
-      </div>
+        </div>
+      </DaySwipe>
     </div>
   );
 }
