@@ -26,7 +26,8 @@ export async function disableEditMode() {
 
 export async function isEditor() {
   const c = await cookies();
-  return c.get(COOKIE_NAME)?.value === "1";
+  const editMode = c.get(COOKIE_NAME);
+  return editMode?.value === "1";
 }
 
 

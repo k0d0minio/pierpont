@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import prisma from '../../../lib/prisma'
+import supabase from '../../../lib/supabase'
 
 export const runtime = 'nodejs'
 
@@ -29,7 +29,10 @@ async function maintainDays() {
   const todayUtc = dateFromYmdUtc(todayYmd)
 
   // Delete all days strictly before today (Brussels)
-  const del = await prisma.day.deleteMany({ where: { dateISO: { lt: todayUtc } } })
+  const { count: deleted } = await supabase
+    .from('Day')
+    .delete()
+    .lt('dateISO', todayUtc.toISOString())
 
   // Ensure today + 13 days exist (2 weeks ahead including today) => total 14 days
   let created = 0
@@ -37,15 +40,16 @@ async function maintainDays() {
     const d = new Date(todayUtc)
     d.setUTCDate(d.getUTCDate() + i)
     const weekday = weekdayNameBrussels(d)
-    await prisma.day.upsert({
-      where: { dateISO: d },
-      update: { weekday },
-      create: { dateISO: d, weekday },
-    })
+    await supabase
+      .from('Day')
+      .upsert({
+        dateISO: d.toISOString(),
+        weekday
+      }, { onConflict: 'dateISO' })
     created++
   }
 
-  return { deleted: del.count, ensured: created }
+  return { deleted: deleted || 0, ensured: created }
 }
 
 function isAuthorized(req) {

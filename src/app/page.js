@@ -1,9 +1,8 @@
-import prisma from "../lib/prisma";
-import EditGate from "./EditGate.jsx";
-import { isEditor } from "./actions/auth";
+import supabase from "../lib/supabase";
 import { Heading } from "../../components/heading.jsx";
-import { Table, TableHead, TableBody, TableRow, TableHeader, TableCell } from "../../components/table.jsx";
-import { Badge } from "../../components/badge.jsx";
+import { DayCard } from "../../components/day-card.jsx";
+import { AdminIndicator } from "../../components/admin-indicator.jsx";
+import { Logo } from "../../components/logo.jsx";
 
 // Avoid build-time prerender hitting the database on Vercel
 export const dynamic = 'force-dynamic'
@@ -64,92 +63,36 @@ function formatYmd(date) {
   return `${y}-${m}-${d}`;
 }
 
-function summarizePDJ(pdjGroups) {
-  if (!pdjGroups || pdjGroups.length === 0) return { pattern: "—", total: 0, ambiguous: false };
-  const sizes = pdjGroups.map((g) => g.size).filter((n) => Number.isFinite(n));
-  const pattern = sizes.length ? sizes.join("+") : "—";
-  const total = sizes.reduce((a, b) => a + b, 0);
-  const ambiguous = pdjGroups.some((g) => g.isAmbiguous);
-  return { pattern, total, ambiguous };
-}
-
-function sumSizes(entries) {
-  if (!entries || entries.length === 0) return 0;
-  return entries
-    .map((e) => e.size)
-    .filter((n) => Number.isFinite(n))
-    .reduce((a, b) => a + b, 0);
-}
 
 export default async function Home() {
-  const range = getWeekRangeForBrussels();
-  const start = range[0];
-  const end = range[6];
-
-  const days = await prisma.day.findMany({
-    where: { dateISO: { gte: start, lte: end } },
-    include: {
-      pdjGroups: true,
-      hotelGuestEntries: true,
-      golfEntries: true,
-      eventEntries: true,
-    },
-    orderBy: { dateISO: "asc" },
-  });
-
-  const editor = await isEditor();
+  const { data: days } = await supabase
+    .from('Day')
+    .select('*, entries:Entry(*)')
+    .order('dateISO', { ascending: true });
 
   return (
     <div className="font-sans min-h-screen p-6 sm:p-10">
-      <div className="flex items-center justify-between mb-4">
-        <Heading level={1}>Horeca Weekly Board</Heading>
-        <EditGate isEditor={editor} />
+      <div className="flex items-center justify-between mb-8">
+        <Logo size="xl" />
+        <AdminIndicator />
       </div>
-      <Table grid dense striped>
-        <TableHead>
-          <TableRow>
-            <TableHeader className="w-[28%]">Date</TableHeader>
-            <TableHeader>Breakfast</TableHeader>
-            <TableHeader className="hidden sm:table-cell">Hotel Guests</TableHeader>
-            <TableHeader className="hidden sm:table-cell">Golf</TableHeader>
-            <TableHeader className="hidden sm:table-cell">Events</TableHeader>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {days.map((d) => {
-            const pdj = summarizePDJ(d.pdjGroups);
-            const hotel = sumSizes(d.hotelGuestEntries);
-            const golfTitle = d.golfEntries?.[0]?.title || "";
-            const eventTitle = d.eventEntries?.[0]?.title || "";
-            return (
-              <TableRow key={d.id} href={`/day/${formatYmd(d.dateISO)}`}>
-                <TableCell label="Date">
-                  <div className="flex items-center gap-2">
-                    <span>{formatDayDisplay(d.dateISO)}</span>
-                    {golfTitle ? <Badge color="emerald">Golf</Badge> : null}
-                    {eventTitle ? <Badge color="sky">Events</Badge> : null}
-                  </div>
-                </TableCell>
-                <TableCell label="Breakfast">
-                  <div className="flex items-center gap-2">
-                    <Badge color={pdj.ambiguous ? "amber" : "zinc"}>{pdj.pattern}</Badge>
-                    <span className="text-zinc-500">Total {pdj.total}</span>
-                  </div>
-                </TableCell>
-                <TableCell label="Hotel Guests">
-                  {hotel > 0 ? <Badge color="zinc">{hotel}</Badge> : <span className="text-zinc-500">—</span>}
-                </TableCell>
-                <TableCell label="Golf">
-                  {golfTitle ? <span>{golfTitle}</span> : <span className="text-zinc-500">—</span>}
-                </TableCell>
-                <TableCell label="Events">
-                  {eventTitle ? <span>{eventTitle}</span> : <span className="text-zinc-500">—</span>}
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
+      
+      {/* Responsive Grid Layout */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+        {days?.map((day) => (
+          <DayCard
+            key={day.id}
+            day={day}
+            entries={day.entries}
+          />
+        ))}
+      </div>
+      
+      {days?.length === 0 && (
+        <div className="text-center py-12">
+          <p className="text-zinc-500 dark:text-zinc-400">No days found</p>
+        </div>
+      )}
     </div>
   );
 }

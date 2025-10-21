@@ -4,6 +4,7 @@ import { useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '../../../../components/button.jsx'
 import { Link } from '../../../../components/link.jsx'
+import { ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react'
 
 function parseYmd(ymd) {
   const [y, m, d] = ymd.split('-').map((n) => Number(n))
@@ -84,23 +85,22 @@ export default function DayNav({ dateParam }) {
   }, [goPrev, goNext])
 
   return (
-    <>
-      <div className="flex items-center justify-between gap-2">
-        <Link href="/">
-          <Button plain aria-label="Back to week" className="text-xs sm:text-sm">← Week</Button>
-        </Link>
-        <div className="hidden sm:flex items-center gap-2">
-          <Button plain aria-label="Previous day" onClick={goPrev} className="text-base sm:text-sm">←</Button>
-          <Button plain aria-label="Next day" onClick={goNext} className="text-base sm:text-sm">→</Button>
-        </div>
+    <div className="flex items-center justify-between gap-2">
+      <Link href="/">
+        <Button plain aria-label="Back to Schedule" className="text-xs sm:text-sm flex items-center gap-1">
+          <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4" />
+          Back
+        </Button>
+      </Link>
+      <div className="hidden sm:flex items-center gap-2">
+        <Button plain aria-label="Previous day" onClick={goPrev} className="text-base sm:text-sm">
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+        <Button plain aria-label="Next day" onClick={goNext} className="text-base sm:text-sm">
+          <ChevronRight className="h-4 w-4" />
+        </Button>
       </div>
-      <div className="fixed inset-x-0 bottom-2 z-10 flex justify-center sm:hidden">
-        <div className="rounded-full bg-zinc-900/90 text-white shadow-lg backdrop-blur px-3 py-1.5 flex items-center gap-6">
-          <button onClick={goPrev} aria-label="Previous day" className="text-lg">←</button>
-          <button onClick={goNext} aria-label="Next day" className="text-lg">→</button>
-        </div>
-      </div>
-    </>
+    </div>
   )
 }
 

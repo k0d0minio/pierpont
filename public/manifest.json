@@ -1,0 +1,56 @@
+{
+  "name": "HORECA Pierpont - Schedule Manager",
+  "short_name": "HORECA Pierpont",
+  "description": "Schedule management system for Pierpont Golf Course reception and restaurant coordination",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#00612e",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en",
+  "categories": ["business", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%2300612e' rx='4'/><text x='16' y='22' font-family='Arial,sans-serif' font-size='20' font-weight='bold' text-anchor='middle' fill='white'>P</text></svg>",
+      "sizes": "32x32",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' fill='%2300612e' rx='8'/><text x='32' y='44' font-family='Arial,sans-serif' font-size='40' font-weight='bold' text-anchor='middle' fill='white'>P</text></svg>",
+      "sizes": "64x64",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'><rect width='128' height='128' fill='%2300612e' rx='16'/><text x='64' y='88' font-family='Arial,sans-serif' font-size='80' font-weight='bold' text-anchor='middle' fill='white'>P</text></svg>",
+      "sizes": "128x128",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' fill='%2300612e' rx='64'/><text x='256' y='352' font-family='Arial,sans-serif' font-size='320' font-weight='bold' text-anchor='middle' fill='white'>P</text></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "form_factor": "narrow",
+      "label": "HORECA Pierpont Schedule Manager"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "View Today's Schedule",
+      "short_name": "Today",
+      "description": "View today's schedule",
+      "url": "/",
+      "icons": [
+        {
+          "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%2300612e' rx='4'/><text x='16' y='22' font-family='Arial,sans-serif' font-size='20' font-weight='bold' text-anchor='middle' fill='white'>P</text></svg>",
+          "sizes": "32x32"
+        }
+      ]
+    }
+  ]
+}

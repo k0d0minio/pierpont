@@ -1,24 +1,19 @@
 {
-  "name": "app",
+  "name": "horeca-pierpont-schedule-manager",
   "version": "0.1.0",
+  "description": "Schedule management system for Pierpont Golf Course reception and restaurant coordination",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
-    "postinstall": "prisma generate",
     "start": "next start",
-    "lint": "eslint",
-    "prisma": "prisma",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev --name init",
-    "prisma:deploy": "prisma migrate deploy",
-    "prisma:studio": "prisma studio",
-    "seed": "node prisma/seed.js"
+    "lint": "eslint"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.8",
-    "@prisma/client": "^6.16.2",
+    "@supabase/supabase-js": "^2.45.4",
     "clsx": "^2.1.1",
+    "lucide-react": "^0.546.0",
     "motion": "^12.23.15",
     "next": "15.5.3",
     "react": "19.1.0",
@@ -29,7 +24,6 @@
     "@tailwindcss/postcss": "^4",
     "eslint": "^9",
     "eslint-config-next": "15.5.3",
-    "prisma": "^6.16.2",
     "tailwindcss": "^4.1.13"
   }
 }

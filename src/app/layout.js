@@ -1,5 +1,6 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import PWARegistration from "../../components/pwa-registration";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,27 +14,29 @@ const geistMono = Geist_Mono({
 
 export const metadata = {
   title: {
-    default: "Pierpont Assistant",
-    template: "%s | Pierpont Assistant",
+    default: "HORECA - Schedule Manager",
+    template: "%s | HORECA Pierpont",
   },
-  description: "Your assistant for Pierpont. Chat, plan, and manage tasks.",
+  description: "Schedule management system for Pierpont Golf Course reception and restaurant coordination. Streamline communication between golf course operations and HORECA services.",
+  keywords: ["golf course", "schedule manager", "restaurant", "reception", "HORECA", "Pierpont", "coordination"],
+  authors: [{ name: "Pierpont Golf Course" }],
   icons: {
-    icon: "/icon.svg",
-    shortcut: "/icon.svg",
-    apple: "/icon.svg",
+    icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%2300612e' rx='4'/><text x='16' y='22' font-family='Arial,sans-serif' font-size='20' font-weight='bold' text-anchor='middle' fill='white'>P</text></svg>",
+    shortcut: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%2300612e' rx='4'/><text x='16' y='22' font-family='Arial,sans-serif' font-size='20' font-weight='bold' text-anchor='middle' fill='white'>P</text></svg>",
+    apple: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%2300612e' rx='4'/><text x='16' y='22' font-family='Arial,sans-serif' font-size='20' font-weight='bold' text-anchor='middle' fill='white'>P</text></svg>",
   },
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
   openGraph: {
-    title: "Pierpont Assistant",
-    description: "Your assistant for Pierpont. Chat, plan, and manage tasks.",
+    title: "HORECA - Schedule Manager",
+    description: "Schedule management system for Pierpont Golf Course reception and restaurant coordination. Streamline communication between golf course operations and HORECA services.",
     url: "/",
-    siteName: "Pierpont Assistant",
+    siteName: "HORECA Schedule Manager",
     images: [
       {
-        url: "/icon.svg",
+        url: "/icon-light.svg",
         width: 512,
         height: 512,
-        alt: "Pierpont Assistant",
+        alt: "HORECA Pierpont Logo",
       },
     ],
     locale: "en_US",
@@ -41,9 +44,19 @@ export const metadata = {
   },
   twitter: {
     card: "summary",
-    title: "Pierpont Assistant",
-    description: "Your assistant for Pierpont. Chat, plan, and manage tasks.",
-    images: ["/icon.svg"],
+    title: "HORECA - Schedule Manager",
+    description: "Schedule management system for Pierpont Golf Course reception and restaurant coordination."
+  },
+  manifest: "/manifest.json",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#00612e" },
+    { media: "(prefers-color-scheme: dark)", color: "#00612e" }
+  ],
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
   },
 };
 
@@ -52,9 +65,13 @@ export const dynamic = 'force-dynamic'
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
+      <head>
+        <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%2300612e' rx='4'/><text x='16' y='22' font-family='Arial,sans-serif' font-size='20' font-weight='bold' text-anchor='middle' fill='white'>P</text></svg>" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <PWARegistration />
         {children}
       </body>
     </html>
