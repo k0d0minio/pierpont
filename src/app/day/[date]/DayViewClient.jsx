@@ -25,6 +25,7 @@ export default function DayViewClient({
   const [editingEntry, setEditingEntry] = useState(null)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [entryToDelete, setEntryToDelete] = useState(null)
+  
 
   const openModal = (type) => {
     setModalType(type)
