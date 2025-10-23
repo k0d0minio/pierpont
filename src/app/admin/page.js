@@ -41,6 +41,10 @@ export default function AdminLogin() {
       // Also set the cookie for server-side authentication
       document.cookie = 'pierpont_edit_mode=1; path=/; sameSite=lax'
       
+      // Debug: Log cookie setting
+      console.log('Admin login successful - localStorage and cookie set')
+      console.log('Cookie set:', document.cookie)
+      
       // Redirect to home page
       router.push('/')
     } else {

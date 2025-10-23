@@ -3,8 +3,10 @@
 import { useState } from 'react'
 import { EntryCard, SectionHeader } from "../../../../components/entry-card.jsx"
 import { AddEntryModal } from "../../../../components/add-entry-modal.jsx"
-import { useAdminAuth } from "../../../lib/admin-auth.js"
-import { createPDJGroup, deletePDJGroup, createHotelGuest, deleteHotelGuest, createGolfEntry, deleteGolfEntry, createEventEntry, deleteEventEntry, createReservationEntry, deleteReservationEntry } from "./actions"
+import { Dialog, DialogTitle, DialogBody, DialogActions } from "../../../../components/dialog.jsx"
+import { Button } from "../../../../components/button.jsx"
+import { useAdminAuth } from "../../../lib/AdminAuthProvider"
+import { createPDJGroup, deletePDJGroup, createHotelGuest, deleteHotelGuest, createGolfEntry, deleteGolfEntry, createEventEntry, deleteEventEntry, createReservationEntry, deleteReservationEntry, updatePDJGroup, updateHotelGuest, updateGolfEntry, updateEventEntry, updateReservationEntry } from "./actions"
 import { Coffee, Building, LandPlot, Calendar, Users } from 'lucide-react'
 
 export default function DayViewClient({ 
@@ -15,64 +17,143 @@ export default function DayViewClient({
   reservationEntries,
   dateParam 
 }) {
-  const { isAuthenticated } = useAdminAuth()
+  const { isAuthenticated, isLoading } = useAdminAuth()
   const [modalOpen, setModalOpen] = useState(false)
   const [modalType, setModalType] = useState(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState(null)
+  const [editingEntry, setEditingEntry] = useState(null)
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [entryToDelete, setEntryToDelete] = useState(null)
 
   const openModal = (type) => {
     setModalType(type)
     setModalOpen(true)
+    setError(null)
+    setEditingEntry(null)
+  }
+
+  const openEditModal = (entry) => {
+    setModalType(entry.type)
+    setModalOpen(true)
+    setError(null)
+    setEditingEntry(entry)
   }
 
   const closeModal = () => {
     setModalOpen(false)
     setModalType(null)
+    setError(null)
+    setEditingEntry(null)
   }
 
   const handleSubmit = async (formData) => {
-    let result
-    switch (modalType) {
-      case 'breakfast':
-        result = await createPDJGroup(formData)
-        break
-      case 'hotel':
-        result = await createHotelGuest(formData)
-        break
-      case 'golf':
-        result = await createGolfEntry(formData)
-        break
-      case 'event':
-        result = await createEventEntry(formData)
-        break
-      case 'reservation':
-        result = await createReservationEntry(formData)
-        break
-      default:
-        return
-    }
+    setIsSubmitting(true)
+    setError(null)
     
-    if (result?.ok) {
-      // The page will revalidate automatically due to revalidatePath in actions
+    try {
+      let result
+      const isEditMode = !!editingEntry
+      
+      if (isEditMode) {
+        // Update operations
+        switch (modalType) {
+          case 'breakfast':
+            result = await updatePDJGroup(formData)
+            break
+          case 'hotel':
+            result = await updateHotelGuest(formData)
+            break
+          case 'golf':
+            result = await updateGolfEntry(formData)
+            break
+          case 'event':
+            result = await updateEventEntry(formData)
+            break
+          case 'reservation':
+            result = await updateReservationEntry(formData)
+            break
+          default:
+            setError('Unknown entry type')
+            return
+        }
+      } else {
+        // Create operations
+        switch (modalType) {
+          case 'breakfast':
+            result = await createPDJGroup(formData)
+            break
+          case 'hotel':
+            result = await createHotelGuest(formData)
+            break
+          case 'golf':
+            result = await createGolfEntry(formData)
+            break
+          case 'event':
+            result = await createEventEntry(formData)
+            break
+          case 'reservation':
+            result = await createReservationEntry(formData)
+            break
+          default:
+            setError('Unknown entry type')
+            return
+        }
+      }
+      
+      if (result?.ok) {
+        closeModal()
+        // The page will revalidate automatically due to revalidatePath in actions
+      } else {
+        setError(result?.error || `Failed to ${isEditMode ? 'update' : 'create'} entry`)
+      }
+    } catch (err) {
+      console.error('Form submission error:', err)
+      setError('An unexpected error occurred')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
-  const handleDelete = async (entry) => {
+  const handleDelete = (entry) => {
+    setEntryToDelete(entry)
+    setDeleteConfirmOpen(true)
+  }
+
+  const confirmDelete = async () => {
+    if (!entryToDelete) return
+    
     let result
-    switch (entry.type) {
+    switch (entryToDelete.type) {
       case 'breakfast':
-        result = await deletePDJGroup(new FormData().append('id', entry.id).append('date', dateParam))
+        const breakfastFormData = new FormData()
+        breakfastFormData.append('id', entryToDelete.id)
+        breakfastFormData.append('date', dateParam)
+        result = await deletePDJGroup(breakfastFormData)
         break
       case 'hotel':
-        result = await deleteHotelGuest(new FormData().append('id', entry.id).append('date', dateParam))
+        const hotelFormData = new FormData()
+        hotelFormData.append('id', entryToDelete.id)
+        hotelFormData.append('date', dateParam)
+        result = await deleteHotelGuest(hotelFormData)
         break
       case 'golf':
-        result = await deleteGolfEntry(new FormData().append('id', entry.id).append('date', dateParam))
+        const golfFormData = new FormData()
+        golfFormData.append('id', entryToDelete.id)
+        golfFormData.append('date', dateParam)
+        result = await deleteGolfEntry(golfFormData)
         break
       case 'event':
-        result = await deleteEventEntry(new FormData().append('id', entry.id).append('date', dateParam))
+        const eventFormData = new FormData()
+        eventFormData.append('id', entryToDelete.id)
+        eventFormData.append('date', dateParam)
+        result = await deleteEventEntry(eventFormData)
         break
       case 'reservation':
-        result = await deleteReservationEntry(new FormData().append('id', entry.id).append('date', dateParam))
+        const reservationFormData = new FormData()
+        reservationFormData.append('id', entryToDelete.id)
+        reservationFormData.append('date', dateParam)
+        result = await deleteReservationEntry(reservationFormData)
         break
       default:
         return
@@ -81,11 +162,23 @@ export default function DayViewClient({
     if (result?.ok) {
       // The page will revalidate automatically due to revalidatePath in actions
     }
+    
+    setDeleteConfirmOpen(false)
+    setEntryToDelete(null)
+  }
+
+  const cancelDelete = () => {
+    setDeleteConfirmOpen(false)
+    setEntryToDelete(null)
   }
 
   const handleEdit = (entry) => {
-    // TODO: Implement edit functionality
-    console.log('Edit entry:', entry)
+    openEditModal(entry)
+  }
+
+  // Don't render until authentication state is loaded
+  if (isLoading) {
+    return <div className="text-center py-8">Loading...</div>
   }
 
   return (
@@ -249,7 +342,28 @@ export default function DayViewClient({
         entryType={modalType}
         onSubmit={handleSubmit}
         dateParam={dateParam}
+        isSubmitting={isSubmitting}
+        error={error}
+        editEntry={editingEntry}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteConfirmOpen} onClose={cancelDelete}>
+        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogBody>
+          <p className="text-zinc-700 dark:text-zinc-300">
+            Are you sure you want to delete this {entryToDelete?.type} entry? This action cannot be undone.
+          </p>
+        </DialogBody>
+        <DialogActions>
+          <Button type="button" plain onClick={cancelDelete}>
+            Cancel
+          </Button>
+          <Button type="button" color="red" onClick={confirmDelete}>
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   )
 }

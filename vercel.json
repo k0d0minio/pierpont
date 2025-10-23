@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/maintain-days",
+      "schedule": "0 2 * * *"
+    }
+  ]
+}

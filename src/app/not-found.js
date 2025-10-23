@@ -1,3 +1,10 @@
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+}
+
 export default function NotFound() {
   return (
     <div className="font-sans min-h-screen p-6 sm:p-10">

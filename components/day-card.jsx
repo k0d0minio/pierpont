@@ -83,7 +83,7 @@ export function DayCard({ day, entries }) {
 // Helper functions (moved from main page)
 function summarizePDJ(pdjGroups) {
   if (!pdjGroups || pdjGroups.length === 0) return { pattern: "—", total: 0, ambiguous: false }
-  const sizes = pdjGroups.map((g) => g.size).filter((n) => Number.isFinite(n))
+  const sizes = pdjGroups.map((g) => g.guestCount).filter((n) => Number.isFinite(n))
   const pattern = sizes.length ? sizes.join("+") : "—"
   const total = sizes.reduce((a, b) => a + b, 0)
   const ambiguous = pdjGroups.some((g) => g.isAmbiguous)
@@ -93,7 +93,7 @@ function summarizePDJ(pdjGroups) {
 function sumSizes(entries) {
   if (!entries || entries.length === 0) return 0
   return entries
-    .map((e) => e.size)
+    .map((e) => e.guestCount)
     .filter((n) => Number.isFinite(n))
     .reduce((a, b) => a + b, 0)
 }

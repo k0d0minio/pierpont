@@ -14,14 +14,22 @@ export function AddEntryModal({
   onClose, 
   entryType, 
   onSubmit, 
-  dateParam 
+  dateParam,
+  isSubmitting = false,
+  error = null,
+  editEntry = null
 }) {
+
+  const isEditMode = !!editEntry
 
   const handleSubmit = (e) => {
     e.preventDefault()
     const formData = new FormData(e.target)
+    if (isEditMode) {
+      formData.append('id', editEntry.id)
+    }
     onSubmit(formData)
-    onClose()
+    // Don't close modal here - let parent handle it after success/error
   }
 
   const renderTypeSpecificFields = () => {
@@ -39,6 +47,7 @@ export function AddEntryModal({
                   name="guestName" 
                   type="text" 
                   placeholder="e.g., John Smith"
+                  defaultValue={editEntry?.guestName || ''}
                   required
                   className="w-full"
                 />
@@ -52,6 +61,7 @@ export function AddEntryModal({
                   name="roomNumber" 
                   type="text" 
                   placeholder="e.g., 101"
+                  defaultValue={editEntry?.roomNumber || ''}
                   required
                   className="w-full"
                 />
@@ -66,6 +76,7 @@ export function AddEntryModal({
                 name="guestCount" 
                 type="number" 
                 placeholder="e.g., 2"
+                defaultValue={editEntry?.guestCount || ''}
                 required
                 className="w-full"
               />
@@ -86,6 +97,7 @@ export function AddEntryModal({
                   name="guestName" 
                   type="text" 
                   placeholder="e.g., John Smith"
+                  defaultValue={editEntry?.guestName || ''}
                   required
                   className="w-full"
                 />
@@ -99,6 +111,7 @@ export function AddEntryModal({
                   name="roomNumber" 
                   type="text" 
                   placeholder="e.g., 101"
+                  defaultValue={editEntry?.roomNumber || ''}
                   required
                   className="w-full"
                 />
@@ -113,6 +126,7 @@ export function AddEntryModal({
                 name="guestCount" 
                 type="number" 
                 placeholder="e.g., 2"
+                defaultValue={editEntry?.guestCount || ''}
                 required
                 className="w-full"
               />
@@ -132,6 +146,7 @@ export function AddEntryModal({
                 name="title" 
                 type="text" 
                 placeholder="e.g., Golf Tournament"
+                defaultValue={editEntry?.title || ''}
                 required
                 className="w-full"
               />
@@ -145,6 +160,7 @@ export function AddEntryModal({
                 name="description" 
                 rows={3}
                 placeholder="Describe the golf event..."
+                defaultValue={editEntry?.description || ''}
                 required
                 className="w-full"
               />
@@ -159,6 +175,7 @@ export function AddEntryModal({
                   name="size" 
                   type="number" 
                   placeholder="e.g., 18"
+                  defaultValue={editEntry?.guestCount || ''}
                   required
                   className="w-full"
                 />
@@ -172,6 +189,7 @@ export function AddEntryModal({
                   name="capacity" 
                   type="number" 
                   placeholder="e.g., 20"
+                  defaultValue={editEntry?.capacity || ''}
                   required
                   className="w-full"
                 />
@@ -187,6 +205,7 @@ export function AddEntryModal({
                   name="poc" 
                   type="text" 
                   placeholder="e.g., John Smith"
+                  defaultValue={editEntry?.pocName || ''}
                   required
                   className="w-full"
                 />
@@ -198,6 +217,7 @@ export function AddEntryModal({
                 <Select 
                   id="venueType"
                   name="venueType" 
+                  defaultValue={editEntry?.location || ''}
                   required
                   className="w-full"
                 >
@@ -226,6 +246,7 @@ export function AddEntryModal({
                 name="title" 
                 type="text" 
                 placeholder="e.g., Corporate Event"
+                defaultValue={editEntry?.title || ''}
                 required
                 className="w-full"
               />
@@ -239,6 +260,7 @@ export function AddEntryModal({
                 name="description" 
                 rows={3}
                 placeholder="Describe the event..."
+                defaultValue={editEntry?.description || ''}
                 required
                 className="w-full"
               />
@@ -253,6 +275,7 @@ export function AddEntryModal({
                   name="size" 
                   type="number" 
                   placeholder="e.g., 50"
+                  defaultValue={editEntry?.guestCount || ''}
                   required
                   className="w-full"
                 />
@@ -266,6 +289,7 @@ export function AddEntryModal({
                   name="capacity" 
                   type="number" 
                   placeholder="e.g., 100"
+                  defaultValue={editEntry?.capacity || ''}
                   required
                   className="w-full"
                 />
@@ -281,6 +305,7 @@ export function AddEntryModal({
                   name="poc" 
                   type="text" 
                   placeholder="e.g., Jane Doe"
+                  defaultValue={editEntry?.pocName || ''}
                   required
                   className="w-full"
                 />
@@ -292,6 +317,7 @@ export function AddEntryModal({
                 <Select 
                   id="venueType"
                   name="venueType" 
+                  defaultValue={editEntry?.location || ''}
                   required
                   className="w-full"
                 >
@@ -321,6 +347,7 @@ export function AddEntryModal({
                   name="guestName" 
                   type="text" 
                   placeholder="e.g., John Smith"
+                  defaultValue={editEntry?.guestName || ''}
                   required
                   className="w-full"
                 />
@@ -334,6 +361,7 @@ export function AddEntryModal({
                   name="phoneNumber" 
                   type="tel" 
                   placeholder="e.g., +32 123 456 789"
+                  defaultValue={editEntry?.phoneNumber || ''}
                   required
                   className="w-full"
                 />
@@ -349,6 +377,7 @@ export function AddEntryModal({
                   name="email" 
                   type="email" 
                   placeholder="e.g., john@example.com"
+                  defaultValue={editEntry?.email || ''}
                   required
                   className="w-full"
                 />
@@ -362,6 +391,7 @@ export function AddEntryModal({
                   name="guestCount" 
                   type="number" 
                   placeholder="e.g., 4"
+                  defaultValue={editEntry?.guestCount || ''}
                   required
                   className="w-full"
                 />
@@ -376,13 +406,24 @@ export function AddEntryModal({
   };
 
   const getTitle = () => {
-    switch (entryType) {
-      case "breakfast": return "Add Breakfast Group"
-      case "hotel": return "Add Hotel Guests"
-      case "golf": return "Add Golf Entry"
-      case "event": return "Add Event"
-      case "reservation": return "Add Reservation"
-      default: return "Add Entry"
+    if (isEditMode) {
+      switch (entryType) {
+        case "breakfast": return "Edit Breakfast Group"
+        case "hotel": return "Edit Hotel Guest"
+        case "golf": return "Edit Golf Entry"
+        case "event": return "Edit Event"
+        case "reservation": return "Edit Reservation"
+        default: return "Edit Entry"
+      }
+    } else {
+      switch (entryType) {
+        case "breakfast": return "Add Breakfast Group"
+        case "hotel": return "Add Hotel Guests"
+        case "golf": return "Add Golf Entry"
+        case "event": return "Add Event"
+        case "reservation": return "Add Reservation"
+        default: return "Add Entry"
+      }
     }
   }
 
@@ -407,6 +448,7 @@ export function AddEntryModal({
                   id="startTime"
                   name="startTime" 
                   type="time" 
+                  defaultValue={editEntry?.startTime || ''}
                   className="w-full"
                 />
               </div>
@@ -418,6 +460,7 @@ export function AddEntryModal({
                   id="endTime"
                   name="endTime" 
                   type="time" 
+                  defaultValue={editEntry?.endTime || ''}
                   className="w-full"
                 />
               </div>
@@ -433,6 +476,7 @@ export function AddEntryModal({
                 name="notes" 
                 rows={3}
                 placeholder="Additional notes or details..."
+                defaultValue={editEntry?.notes || ''}
                 className="w-full"
               />
             </div>
@@ -442,6 +486,7 @@ export function AddEntryModal({
               <Checkbox 
                 id="isTourOperator"
                 name="isTourOperator" 
+                defaultChecked={editEntry?.isTourOperator || false}
                 className="mr-2"
               />
               <label htmlFor="isTourOperator" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
@@ -451,13 +496,21 @@ export function AddEntryModal({
           </div>
         </DialogBody>
         <DialogActions>
-          <Button type="button" plain onClick={onClose}>
+          <Button type="button" plain onClick={onClose} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button type="submit" color="emerald">
-            Add Entry
+          <Button type="submit" color="emerald" disabled={isSubmitting}>
+            {isSubmitting ? (isEditMode ? 'Updating...' : 'Adding...') : (isEditMode ? 'Update Entry' : 'Add Entry')}
           </Button>
         </DialogActions>
+        
+        {error && (
+          <div className="px-6 pb-4">
+            <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-md p-3">
+              {error}
+            </div>
+          </div>
+        )}
       </form>
     </Dialog>
   )

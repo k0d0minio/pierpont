@@ -1,6 +1,6 @@
 "use client"
 
-import { useAdminAuth } from '../src/lib/admin-auth'
+import { useAdminAuth } from '../src/lib/AdminAuthProvider'
 import { Button } from './button'
 import { Link } from './link'
 

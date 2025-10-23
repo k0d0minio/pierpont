@@ -1,6 +1,7 @@
 import supabase from "../../../lib/supabase";
 export const dynamic = 'force-dynamic'
 import { Heading } from "../../../../components/heading.jsx";
+import { AdminIndicator } from "../../../../components/admin-indicator.jsx";
 import DayNav from "./DayNav.jsx";
 import DayViewClient from "./DayViewClient.jsx";
 
@@ -10,6 +11,13 @@ function formatDayDisplay(date) {
   const monthName = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Brussels", month: "long" }).format(date);
   const yearNum = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Brussels", year: "numeric" }).format(date);
   return `${weekday} ${dayNum} ${monthName} ${yearNum}`;
+}
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 }
 
 export default async function DayPage({ params }) {
@@ -32,8 +40,9 @@ export default async function DayPage({ params }) {
 
   return (
     <div className="font-sans min-h-screen p-6 sm:p-10">
-      <div className="mb-6">
+      <div className="flex items-center justify-between mb-6">
         <DayNav dateParam={dateParam} />
+        <AdminIndicator />
       </div>
       <Heading level={1} className="mb-2 text-xl sm:text-2xl">{formatDayDisplay(date)}</Heading>
       <div className="text-sm text-zinc-500 mb-8 sm:hidden">Swipe left/right to navigate</div>
