@@ -2,8 +2,7 @@
   "crons": [
     {
       "path": "/api/maintain-days",
-      "schedule": "0 2 * * *",
-      "timezone": "Europe/Brussels"
+      "schedule": "0 1 * * *"
     }
   ]
 }
