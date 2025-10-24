@@ -61,7 +61,9 @@ function isAuthorized(req) {
 }
 
 export async function GET(req) {
-  if (!isAuthorized(req)) return NextResponse.json({ ok: false }, { status: 401 })
+  // Allow Vercel Cron invocations without the edit code
+  const isVercelCron = req.headers.get('x-vercel-cron') === '1'
+  if (!isVercelCron && !isAuthorized(req)) return NextResponse.json({ ok: false }, { status: 401 })
   try {
     const result = await maintainDays()
     return NextResponse.json({ ok: true, ...result })
