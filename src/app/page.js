@@ -3,71 +3,24 @@ import { Heading } from "../../components/heading.jsx";
 import { DayCard } from "../../components/day-card.jsx";
 import { AdminIndicator } from "../../components/admin-indicator.jsx";
 import { Logo } from "../../components/logo.jsx";
+import { ensureDefaultDateRange } from "./actions/days";
+import { getTodayBrusselsUtc } from "../lib/day-utils";
 
 // Avoid build-time prerender hitting the database on Vercel
 export const dynamic = 'force-dynamic'
 
-function getBrusselsYmd(date = new Date()) {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Europe/Brussels",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(date);
-  const y = Number(parts.find((p) => p.type === "year").value);
-  const m = Number(parts.find((p) => p.type === "month").value);
-  const d = Number(parts.find((p) => p.type === "day").value);
-  return { year: y, month: m, day: d };
-}
-
-function dateFromYmdUtc({ year, month, day }) {
-  return new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
-}
-
-function addDays(date, n) {
-  const d = new Date(date);
-  d.setUTCDate(d.getUTCDate() + n);
-  return d;
-}
-
-function weekdayNameBrussels(date) {
-  return new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Brussels", weekday: "long" }).format(date);
-}
-
-function weekdayNumberBrussels(date) {
-  const name = weekdayNameBrussels(date);
-  const map = { Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5, Saturday: 6, Sunday: 7 };
-  return map[name];
-}
-
-function getWeekRangeForBrussels(date = new Date()) {
-  const ymd = getBrusselsYmd(date);
-  const today = dateFromYmdUtc(ymd);
-  const dow = weekdayNumberBrussels(today);
-  const monday = addDays(today, -(dow - 1));
-  return Array.from({ length: 7 }, (_, i) => addDays(monday, i));
-}
-
-function formatDayDisplay(date) {
-  const weekday = weekdayNameBrussels(date);
-  const dayNum = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Brussels", day: "numeric" }).format(date);
-  const monthName = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Brussels", month: "long" }).format(date);
-  const yearNum = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Brussels", year: "numeric" }).format(date);
-  return `${weekday} ${dayNum} ${monthName} ${yearNum}`;
-}
-
-function formatYmd(date) {
-  const y = date.getUTCFullYear();
-  const m = String(date.getUTCMonth() + 1).padStart(2, '0');
-  const d = String(date.getUTCDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-}
-
-
 export default async function Home() {
+  // Ensure default date range exists (today + next 13 days)
+  await ensureDefaultDateRange();
+
+  // Get today's date in Brussels timezone for filtering
+  const todayUtc = getTodayBrusselsUtc();
+
+  // Query days, filtering out past days and ordering by date
   const { data: days } = await supabase
     .from('Day')
     .select('*, entries:Entry(*)')
+    .gte('dateISO', todayUtc.toISOString())
     .order('dateISO', { ascending: true });
 
   return (

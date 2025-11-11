@@ -5,24 +5,8 @@ import { useRouter } from 'next/navigation'
 import { Button } from '../../../../components/button.jsx'
 import { Link } from '../../../../components/link.jsx'
 import { ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react'
-
-function parseYmd(ymd) {
-  const [y, m, d] = ymd.split('-').map((n) => Number(n))
-  return new Date(Date.UTC(y, m - 1, d, 0, 0, 0, 0))
-}
-
-function formatYmd(date) {
-  const y = date.getUTCFullYear()
-  const m = String(date.getUTCMonth() + 1).padStart(2, '0')
-  const d = String(date.getUTCDate()).padStart(2, '0')
-  return `${y}-${m}-${d}`
-}
-
-function addDays(date, n) {
-  const d = new Date(date)
-  d.setUTCDate(d.getUTCDate() + n)
-  return d
-}
+import { ensureDayExists } from '../../actions/days'
+import { parseYmd, formatYmd, addDays, isPastDate } from '../../../lib/day-utils'
 
 export default function DayNav({ dateParam }) {
   const router = useRouter()
@@ -36,15 +20,23 @@ export default function DayNav({ dateParam }) {
     }
   }, [])
 
-  const goPrev = useCallback(() => {
+  const goPrev = useCallback(async () => {
     haptic()
+    const prevDate = addDays(current, -1)
+    // Only ensure day exists if it's not in the past (past dates are handled by redirect)
+    if (!isPastDate(prevDate)) {
+      await ensureDayExists(prevDate.toISOString())
+    }
     router.push(`/day/${prev}`)
-  }, [haptic, router, prev])
+  }, [haptic, router, current])
 
-  const goNext = useCallback(() => {
+  const goNext = useCallback(async () => {
     haptic()
+    const nextDate = addDays(current, 1)
+    // Always ensure next day exists (it's in the future)
+    await ensureDayExists(nextDate.toISOString())
     router.push(`/day/${next}`)
-  }, [haptic, router, next])
+  }, [haptic, router, current])
 
   useEffect(() => {
     let startX = null

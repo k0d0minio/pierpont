@@ -4,6 +4,9 @@ import { Heading } from "../../../../components/heading.jsx";
 import { AdminIndicator } from "../../../../components/admin-indicator.jsx";
 import DayNav from "./DayNav.jsx";
 import DayViewClient from "./DayViewClient.jsx";
+import { ensureDayExists } from "../../actions/days";
+import { parseYmd, isPastDate, getTodayBrusselsUtc, formatYmd } from "../../../lib/day-utils";
+import { redirect } from "next/navigation";
 
 function formatDayDisplay(date) {
   const weekday = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Brussels", weekday: "long" }).format(date);
@@ -22,8 +25,16 @@ export const viewport = {
 
 export default async function DayPage({ params }) {
   const { date: dateParam } = await params; // expects YYYY-MM-DD
-  const [y, m, d] = dateParam.split("-").map((n) => Number(n));
-  const date = new Date(Date.UTC(y, m - 1, d, 0, 0, 0, 0));
+  const date = parseYmd(dateParam);
+
+  // If the requested date is in the past, redirect to today
+  if (isPastDate(date)) {
+    const todayUtc = getTodayBrusselsUtc();
+    redirect(`/day/${formatYmd(todayUtc)}`);
+  }
+
+  // Ensure the requested day exists in the database
+  await ensureDayExists(date.toISOString());
 
   const { data: day } = await supabase
     .from('Day')

@@ -6,51 +6,55 @@ import { Button } from '../../../components/button.jsx'
 import { Input } from '../../../components/input.jsx'
 import { Heading } from '../../../components/heading.jsx'
 import { Logo } from '../../../components/logo.jsx'
-
-// Use the existing environment variable for the password
-const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_EDIT_CODE || "horeca2024"
-
+import { useAdminAuth } from '../../lib/AdminAuthProvider'
 
 export default function AdminLogin() {
   const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
+  const { isAuthenticated, isLoading: authLoading, signIn } = useAdminAuth()
 
   useEffect(() => {
     // Check if already authenticated
-    const isAuthenticated = localStorage.getItem('admin_authenticated')
-    if (isAuthenticated === 'true') {
+    if (!authLoading && isAuthenticated) {
       router.push('/')
     }
-  }, [router])
+  }, [isAuthenticated, authLoading, router])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setIsLoading(true)
     setError('')
 
-    // Simulate a brief delay for better UX
-    await new Promise(resolve => setTimeout(resolve, 500))
-
-    if (password === ADMIN_PASSWORD) {
-      // Store authentication in localStorage
-      localStorage.setItem('admin_authenticated', 'true')
-      localStorage.setItem('admin_auth_timestamp', Date.now().toString())
+    try {
+      const result = await signIn(password)
       
-      // Also set the cookie for server-side authentication
-      document.cookie = 'pierpont_edit_mode=1; path=/; sameSite=lax'
-      
-      // Debug: Log cookie setting
-      console.log('Admin login successful - localStorage and cookie set')
-      console.log('Cookie set:', document.cookie)
-      
-      // Redirect to home page
-      router.push('/')
-    } else {
-      setError('Invalid password')
+      if (result.ok) {
+        // Redirect to home page after successful login
+        router.push('/')
+        router.refresh() // Refresh to ensure server state is updated
+      } else {
+        setError(result.error || 'Invalid password')
+        setIsLoading(false)
+      }
+    } catch (err) {
+      console.error('Login error:', err)
+      setError('An error occurred during sign in. Please try again.')
       setIsLoading(false)
     }
+  }
+
+  // Show loading state while checking authentication
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-900 p-4">
+        <div className="text-center">
+          <Logo size="lg" className="justify-center mb-4" />
+          <p className="text-zinc-600 dark:text-zinc-400">Loading...</p>
+        </div>
+      </div>
+    )
   }
 
   return (

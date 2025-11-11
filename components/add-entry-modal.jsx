@@ -54,7 +54,7 @@ export function AddEntryModal({
               </div>
               <div>
                 <label htmlFor="roomNumber" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  Room Number *
+                  Room Number
                 </label>
                 <Input 
                   id="roomNumber"
@@ -62,14 +62,13 @@ export function AddEntryModal({
                   type="text" 
                   placeholder="e.g., 101"
                   defaultValue={editEntry?.roomNumber || ''}
-                  required
                   className="w-full"
                 />
               </div>
             </div>
             <div>
               <label htmlFor="guestCount" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                Guest Count *
+                Guest Count
               </label>
               <Input 
                 id="guestCount"
@@ -77,7 +76,6 @@ export function AddEntryModal({
                 type="number" 
                 placeholder="e.g., 2"
                 defaultValue={editEntry?.guestCount || ''}
-                required
                 className="w-full"
               />
             </div>
@@ -104,7 +102,7 @@ export function AddEntryModal({
               </div>
               <div>
                 <label htmlFor="roomNumber" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  Room Number *
+                  Room Number
                 </label>
                 <Input 
                   id="roomNumber"
@@ -112,14 +110,13 @@ export function AddEntryModal({
                   type="text" 
                   placeholder="e.g., 101"
                   defaultValue={editEntry?.roomNumber || ''}
-                  required
                   className="w-full"
                 />
               </div>
             </div>
             <div>
               <label htmlFor="guestCount" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                Guest Count *
+                Guest Count
               </label>
               <Input 
                 id="guestCount"
@@ -127,7 +124,6 @@ export function AddEntryModal({
                 type="number" 
                 placeholder="e.g., 2"
                 defaultValue={editEntry?.guestCount || ''}
-                required
                 className="w-full"
               />
             </div>
@@ -153,7 +149,7 @@ export function AddEntryModal({
             </div>
             <div>
               <label htmlFor="description" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                Description *
+                Description
               </label>
               <Textarea 
                 id="description"
@@ -161,14 +157,13 @@ export function AddEntryModal({
                 rows={3}
                 placeholder="Describe the golf event..."
                 defaultValue={editEntry?.description || ''}
-                required
                 className="w-full"
               />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="size" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  Size *
+                  Size
                 </label>
                 <Input 
                   id="size"
@@ -176,13 +171,12 @@ export function AddEntryModal({
                   type="number" 
                   placeholder="e.g., 18"
                   defaultValue={editEntry?.guestCount || ''}
-                  required
                   className="w-full"
                 />
               </div>
               <div>
                 <label htmlFor="capacity" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  Capacity *
+                  Capacity
                 </label>
                 <Input 
                   id="capacity"
@@ -190,7 +184,6 @@ export function AddEntryModal({
                   type="number" 
                   placeholder="e.g., 20"
                   defaultValue={editEntry?.capacity || ''}
-                  required
                   className="w-full"
                 />
               </div>
@@ -198,7 +191,7 @@ export function AddEntryModal({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="poc" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  POC (Point of Contact) *
+                  POC (Point of Contact)
                 </label>
                 <Input 
                   id="poc"
@@ -206,19 +199,17 @@ export function AddEntryModal({
                   type="text" 
                   placeholder="e.g., John Smith"
                   defaultValue={editEntry?.pocName || ''}
-                  required
                   className="w-full"
                 />
               </div>
               <div>
                 <label htmlFor="venueType" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  Venue Type *
+                  Venue Type
                 </label>
                 <Select 
                   id="venueType"
                   name="venueType" 
                   defaultValue={editEntry?.location || ''}
-                  required
                   className="w-full"
                 >
                   <option value="">Select venue type...</option>
@@ -253,7 +244,7 @@ export function AddEntryModal({
             </div>
             <div>
               <label htmlFor="description" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                Description *
+                Description
               </label>
               <Textarea 
                 id="description"
@@ -261,14 +252,13 @@ export function AddEntryModal({
                 rows={3}
                 placeholder="Describe the event..."
                 defaultValue={editEntry?.description || ''}
-                required
                 className="w-full"
               />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="size" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  Size *
+                  Size
                 </label>
                 <Input 
                   id="size"
@@ -276,13 +266,12 @@ export function AddEntryModal({
                   type="number" 
                   placeholder="e.g., 50"
                   defaultValue={editEntry?.guestCount || ''}
-                  required
                   className="w-full"
                 />
               </div>
               <div>
                 <label htmlFor="capacity" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  Capacity *
+                  Capacity
                 </label>
                 <Input 
                   id="capacity"
@@ -290,7 +279,6 @@ export function AddEntryModal({
                   type="number" 
                   placeholder="e.g., 100"
                   defaultValue={editEntry?.capacity || ''}
-                  required
                   className="w-full"
                 />
               </div>
@@ -298,7 +286,7 @@ export function AddEntryModal({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="poc" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  POC (Point of Contact) *
+                  POC (Point of Contact)
                 </label>
                 <Input 
                   id="poc"
@@ -306,19 +294,17 @@ export function AddEntryModal({
                   type="text" 
                   placeholder="e.g., Jane Doe"
                   defaultValue={editEntry?.pocName || ''}
-                  required
                   className="w-full"
                 />
               </div>
               <div>
                 <label htmlFor="venueType" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  Venue Type *
+                  Venue Type
                 </label>
                 <Select 
                   id="venueType"
                   name="venueType" 
                   defaultValue={editEntry?.location || ''}
-                  required
                   className="w-full"
                 >
                   <option value="">Select venue type...</option>
@@ -354,7 +340,7 @@ export function AddEntryModal({
               </div>
               <div>
                 <label htmlFor="phoneNumber" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  Phone Number *
+                  Phone Number
                 </label>
                 <Input 
                   id="phoneNumber"
@@ -362,7 +348,6 @@ export function AddEntryModal({
                   type="tel" 
                   placeholder="e.g., +32 123 456 789"
                   defaultValue={editEntry?.phoneNumber || ''}
-                  required
                   className="w-full"
                 />
               </div>
@@ -370,7 +355,7 @@ export function AddEntryModal({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  Email *
+                  Email
                 </label>
                 <Input 
                   id="email"
@@ -378,13 +363,12 @@ export function AddEntryModal({
                   type="email" 
                   placeholder="e.g., john@example.com"
                   defaultValue={editEntry?.email || ''}
-                  required
                   className="w-full"
                 />
               </div>
               <div>
                 <label htmlFor="guestCount" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  Guest Count *
+                  Guest Count
                 </label>
                 <Input 
                   id="guestCount"
@@ -392,7 +376,6 @@ export function AddEntryModal({
                   type="number" 
                   placeholder="e.g., 4"
                   defaultValue={editEntry?.guestCount || ''}
-                  required
                   className="w-full"
                 />
               </div>
