@@ -7,7 +7,8 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "migrate:realtime": "node scripts/run-realtime-migration.js"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.8",

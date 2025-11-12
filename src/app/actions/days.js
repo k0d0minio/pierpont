@@ -79,6 +79,7 @@ export async function ensureDaysRange(startDate, endDate) {
 
 /**
  * Ensure default date range exists (today + next 13 days = 14 days total)
+ * @deprecated This function is no longer used. Days are created on-demand when needed.
  * @returns {{ok: boolean, error?: string, created?: number}}
  */
 export async function ensureDefaultDateRange() {

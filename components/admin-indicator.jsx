@@ -26,6 +26,11 @@ export function AdminIndicator() {
       <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
         Admin Mode
       </span>
+      <Link href="/admin/settings">
+        <Button plain className="text-xs text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300">
+          Settings
+        </Button>
+      </Link>
       <Button
         plain
         onClick={signOut}

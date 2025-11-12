@@ -51,19 +51,25 @@ const renderField = (label, value, className = '') => {
 }
 
 // Helper function to format venue type
-const formatVenueType = (location) => {
-  if (!location) return null
-  
-  const venueMap = {
-    'eagle': 'Eagle',
-    'sports': 'Sports',
-    'events-hall': 'Events Hall',
-    'restaurant': 'Restaurant',
-    'terrace': 'Terrace',
-    'courtyard': 'Courtyard'
+const formatVenueType = (venueType) => {
+  if (!venueType) return null
+  // venueType can be an object (from database) or a string (backward compatibility)
+  if (typeof venueType === 'object' && venueType.name) {
+    return venueType.name
   }
-  
-  return venueMap[location] || location
+  if (typeof venueType === 'string') {
+    // Backward compatibility with old location field
+    const venueMap = {
+      'eagle': 'Eagle',
+      'sports': 'Sports',
+      'events-hall': 'Events Hall',
+      'restaurant': 'Restaurant',
+      'terrace': 'Terrace',
+      'courtyard': 'Courtyard'
+    }
+    return venueMap[venueType] || venueType
+  }
+  return null
 }
 
 // Helper function to format time range
@@ -73,6 +79,17 @@ const formatTimeRange = (startTime, endTime) => {
   if (startTime) return `From ${startTime}`
   if (endTime) return `Until ${endTime}`
   return null
+}
+
+// Helper function to format recurrence frequency
+const formatRecurrenceFrequency = (frequency) => {
+  const frequencyMap = {
+    'weekly': 'Weekly',
+    'biweekly': 'Biweekly',
+    'monthly': 'Monthly',
+    'yearly': 'Yearly'
+  }
+  return frequencyMap[frequency] || frequency
 }
 
 export function EntryCard({ entry, isEditor, onEdit, onDelete }) {
@@ -93,9 +110,9 @@ export function EntryCard({ entry, isEditor, onEdit, onDelete }) {
       case 'event':
         fields.push(renderField('Title', entry.title))
         fields.push(renderField('Description', entry.description))
-        fields.push(renderField('Size', entry.size))
-        fields.push(renderField('Capacity', entry.capacity))
-        fields.push(renderField('Venue', formatVenueType(entry.location)))
+        fields.push(renderField('Confirmed Participants', entry.guestCount))
+        fields.push(renderField('Max Capacity', entry.capacity))
+        fields.push(renderField('Venue', formatVenueType(entry.venueType || entry.location)))
         break
         
       case 'reservation':
@@ -146,6 +163,18 @@ export function EntryCard({ entry, isEditor, onEdit, onDelete }) {
       {/* Dynamic fields */}
       <div className="space-y-2 pr-12">
         {renderFields()}
+        
+        {/* Recurring entry indicator */}
+        {entry.isRecurring && entry.recurrenceFrequency && (
+          <div className="flex items-center gap-2 pt-2 border-t border-zinc-200 dark:border-zinc-700">
+            <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
+              Recurring:
+            </span>
+            <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
+              {formatRecurrenceFrequency(entry.recurrenceFrequency)}
+            </span>
+          </div>
+        )}
         
         {/* Tour Operator flag */}
         {entry.isTourOperator && (

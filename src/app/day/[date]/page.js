@@ -5,7 +5,7 @@ import { AdminIndicator } from "../../../../components/admin-indicator.jsx";
 import DayNav from "./DayNav.jsx";
 import DayViewClient from "./DayViewClient.jsx";
 import { ensureDayExists } from "../../actions/days";
-import { parseYmd, isPastDate, getTodayBrusselsUtc, formatYmd } from "../../../lib/day-utils";
+import { parseYmd, isPastDate, getTodayBrusselsUtc, formatYmd, isDateWithinOneYear } from "../../../lib/day-utils";
 import { redirect } from "next/navigation";
 
 function formatDayDisplay(date) {
@@ -26,25 +26,44 @@ export const viewport = {
 export default async function DayPage({ params }) {
   const { date: dateParam } = await params; // expects YYYY-MM-DD
   const date = parseYmd(dateParam);
+  const todayUtc = getTodayBrusselsUtc();
 
   // If the requested date is in the past, redirect to today
   if (isPastDate(date)) {
-    const todayUtc = getTodayBrusselsUtc();
+    redirect(`/day/${formatYmd(todayUtc)}`);
+  }
+
+  // If the requested date is beyond 1 year, redirect to today
+  if (!isDateWithinOneYear(date)) {
     redirect(`/day/${formatYmd(todayUtc)}`);
   }
 
   // Ensure the requested day exists in the database
   await ensureDayExists(date.toISOString());
 
+  // Query hotel bookings that overlap with this date
+  // A booking overlaps if: checkInDate <= date < checkOutDate
+  const { data: hotelBookings } = await supabase
+    .from('HotelBooking')
+    .select('*, breakfastConfigurations:BreakfastConfiguration(*)')
+    .lte('checkInDate', dateParam)
+    .gt('checkOutDate', dateParam)
+    .order('checkInDate', { ascending: true });
+
+  // Query breakfast configurations for this day
+  const { data: breakfastConfigs } = await supabase
+    .from('BreakfastConfiguration')
+    .select('*, hotelBooking:HotelBooking(*)')
+    .eq('breakfastDate', dateParam)
+    .order('startTime', { ascending: true, nullsFirst: true });
+
+  // Query other entry types (golf, event, reservation) with venue type and POC info
   const { data: day } = await supabase
     .from('Day')
-    .select('*, entries:Entry(*)')
+    .select('*, entries:Entry(*, venueType:VenueType(*), poc:PointOfContact(*))')
     .eq('dateISO', date.toISOString())
     .single();
 
-  // Filter entries by type
-  const pdjGroups = day?.entries?.filter(e => e.type === 'breakfast') || [];
-  const hotelEntries = day?.entries?.filter(e => e.type === 'hotel') || [];
   const golfEntries = day?.entries?.filter(e => e.type === 'golf') || [];
   const eventEntries = day?.entries?.filter(e => e.type === 'event') || [];
   const reservationEntries = day?.entries?.filter(e => e.type === 'reservation') || [];
@@ -59,8 +78,8 @@ export default async function DayPage({ params }) {
       <div className="text-sm text-zinc-500 mb-8 sm:hidden">Swipe left/right to navigate</div>
       
       <DayViewClient
-        pdjGroups={pdjGroups}
-        hotelEntries={hotelEntries}
+        hotelBookings={hotelBookings || []}
+        breakfastConfigs={breakfastConfigs || []}
         golfEntries={golfEntries}
         eventEntries={eventEntries}
         reservationEntries={reservationEntries}

@@ -33,3 +33,4 @@ ALTER TABLE "Entry"
 -- - type (required to identify entry type)
 -- - createdAt, updatedAt (timestamps with defaults)
 
+

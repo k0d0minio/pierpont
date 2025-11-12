@@ -24,18 +24,41 @@ function formatYmd(date) {
   return `${y}-${m}-${d}`;
 }
 
-export function DayCard({ day, entries }) {
+export function DayCard({ day, entries, hotelBookings = [], breakfastConfigs = [] }) {
   const dateObj = new Date(day.dateISO)
   
-  // Process entries by type
-  const pdjGroups = entries?.filter(e => e.type === 'breakfast') || []
-  const hotelEntries = entries?.filter(e => e.type === 'hotel') || []
+  // Process entries by type (for golf, events, etc.)
   const golfEntries = entries?.filter(e => e.type === 'golf') || []
   const eventEntries = entries?.filter(e => e.type === 'event') || []
   
-  // Calculate summaries
-  const pdj = summarizePDJ(pdjGroups)
-  const hotel = sumSizes(hotelEntries)
+  // Calculate summaries from new hotel booking structure
+  const totalBreakfastGuests = breakfastConfigs.reduce((sum, config) => sum + (config.totalGuests || 0), 0)
+  const totalHotelGuests = hotelBookings.reduce((sum, booking) => sum + (booking.guestCount || 0), 0)
+  
+  // Format breakfast breakdown pattern
+  const formatBreakfastPattern = () => {
+    if (breakfastConfigs.length === 0) return null
+    const patterns = breakfastConfigs
+      .map(config => {
+        if (!config.tableBreakdown) return null
+        let breakdown = config.tableBreakdown
+        if (typeof breakdown === 'string') {
+          try {
+            breakdown = JSON.parse(breakdown)
+          } catch {
+            return breakdown
+          }
+        }
+        if (Array.isArray(breakdown)) {
+          return breakdown.join('+')
+        }
+        return null
+      })
+      .filter(Boolean)
+    return patterns.length > 0 ? patterns.join(', ') : null
+  }
+  
+  const breakfastPattern = formatBreakfastPattern()
   const golfTitle = golfEntries?.[0]?.title || ""
   const eventTitle = eventEntries?.[0]?.title || ""
   
@@ -63,14 +86,21 @@ export function DayCard({ day, entries }) {
           <div className="flex items-center justify-between">
             <span className="text-xs text-zinc-600 dark:text-zinc-400">Breakfast</span>
             <span className="text-xs font-medium text-zinc-900 dark:text-zinc-100">
-              {pdj.total > 0 ? pdj.total : "—"}
+              {totalBreakfastGuests > 0 ? (
+                <>
+                  {totalBreakfastGuests}
+                  {breakfastPattern && (
+                    <span className="text-zinc-500 dark:text-zinc-400 ml-1">({breakfastPattern})</span>
+                  )}
+                </>
+              ) : "—"}
             </span>
           </div>
           
           <div className="flex items-center justify-between">
             <span className="text-xs text-zinc-600 dark:text-zinc-400">Hotel Guests</span>
             <span className="text-xs font-medium text-zinc-900 dark:text-zinc-100">
-              {hotel > 0 ? hotel : "—"}
+              {totalHotelGuests > 0 ? totalHotelGuests : "—"}
             </span>
           </div>
         </div>

@@ -62,11 +62,62 @@ export function getTodayBrusselsUtc() {
 
 /**
  * Get date range for default calendar view (today + next 13 days = 14 days total)
+ * @deprecated Use getMonthDateRange() instead for month-based pagination
  * @returns {Date[]} Array of 14 Date objects
  */
 export function getDefaultDateRange() {
   const todayUtc = getTodayBrusselsUtc()
   return Array.from({ length: 14 }, (_, i) => addDays(todayUtc, i))
+}
+
+/**
+ * Get date range for a month starting from the given date
+ * @param {Date} startDate - First day of the month (will be normalized to first day of month in Brussels timezone)
+ * @returns {{startDate: Date, endDate: Date, dates: Date[]}} Object with start/end dates and array of all dates in the month
+ */
+export function getMonthDateRange(startDate) {
+  const start = new Date(startDate)
+  const brusselsYmd = getBrusselsYmd(start)
+  
+  // Get first day of the month
+  const firstDay = dateFromYmdUtc({ year: brusselsYmd.year, month: brusselsYmd.month, day: 1 })
+  
+  // Get first day of next month
+  let nextMonth = brusselsYmd.month + 1
+  let nextYear = brusselsYmd.year
+  if (nextMonth > 12) {
+    nextMonth = 1
+    nextYear += 1
+  }
+  const firstDayNextMonth = dateFromYmdUtc({ year: nextYear, month: nextMonth, day: 1 })
+  
+  // Last day of the month is one day before first day of next month
+  const lastDay = addDays(firstDayNextMonth, -1)
+  
+  // Generate all dates in the month
+  const dates = []
+  let current = new Date(firstDay)
+  while (current <= lastDay) {
+    dates.push(new Date(current))
+    current.setUTCDate(current.getUTCDate() + 1)
+  }
+  
+  return {
+    startDate: firstDay,
+    endDate: lastDay,
+    dates
+  }
+}
+
+/**
+ * Check if a date is within 1 year from today (in Brussels timezone)
+ * @param {Date} date
+ * @returns {boolean}
+ */
+export function isDateWithinOneYear(date) {
+  const todayUtc = getTodayBrusselsUtc()
+  const oneYearFromToday = addDays(todayUtc, 365)
+  return date >= todayUtc && date <= oneYearFromToday
 }
 
 /**
