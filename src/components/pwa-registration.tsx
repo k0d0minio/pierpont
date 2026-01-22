@@ -82,8 +82,7 @@ export default function PWARegistration() {
     window.__promptPWAInstall = async () => {
       if (deferredPromptRef.current) {
         const promptEvent = deferredPromptRef.current
-        promptEvent.prompt()
-        const { outcome } = await promptEvent.userChoice
+        const { outcome } = await promptEvent.prompt()
         if (outcome !== 'accepted') {
           // user dismissed; keep the prompt available
           return false

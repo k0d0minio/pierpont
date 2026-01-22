@@ -1,5 +1,6 @@
 import clsx from 'clsx'
 import { ReactNode } from 'react'
+import type React from 'react'
 
 type HeadingProps = {
   className?: string;
@@ -9,7 +10,7 @@ type HeadingProps = {
 }
 
 export function Heading({ className, level = 1, ...props }: HeadingProps) {
-  let Element = `h${level}` as keyof JSX.IntrinsicElements
+  let Element = `h${level}` as keyof React.JSX.IntrinsicElements
 
   return (
     <Element
@@ -27,7 +28,7 @@ type SubheadingProps = {
 }
 
 export function Subheading({ className, level = 2, ...props }: SubheadingProps) {
-  let Element = `h${level}` as keyof JSX.IntrinsicElements
+  let Element = `h${level}` as keyof React.JSX.IntrinsicElements
 
   return (
     <Element

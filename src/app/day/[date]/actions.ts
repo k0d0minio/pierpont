@@ -310,6 +310,7 @@ export async function createGolfEntry(formData: FormData): Promise<ActionRespons
   const size = formData.get('size');
   const capacity = formData.get('capacity');
   const entryData: EntryInsert = {
+    dayId: day.id,
     type: 'golf',
     title: (formData.get('title') as string) || null,
     description: (formData.get('description') as string) || null,
@@ -395,7 +396,7 @@ export async function createGolfEntry(formData: FormData): Promise<ActionRespons
 }
 
 // Helper function to find all occurrences of a recurring entry
-async function findRecurringOccurrences(entryId: number, entryType: string): Promise<Array<{ id: number; dayId: number; Day?: { dateISO: string } }>> {
+async function findRecurringOccurrences(entryId: number, entryType: 'breakfast' | 'hotel' | 'golf' | 'event' | 'reservation'): Promise<Array<{ id: number; dayId: number; Day?: { dateISO: string } }>> {
   // First, get the entry to find its identifying fields
   const { data: entry, error: entryError } = await supabase
     .from('Entry')
@@ -439,7 +440,7 @@ async function findRecurringOccurrences(entryId: number, entryType: string): Pro
 }
 
 // Count recurring occurrences (excluding the current entry)
-export async function countRecurringOccurrences(entryId: number, entryType: string): Promise<number> {
+export async function countRecurringOccurrences(entryId: number, entryType: 'breakfast' | 'hotel' | 'golf' | 'event' | 'reservation'): Promise<number> {
   const occurrences = await findRecurringOccurrences(entryId, entryType);
   // Exclude the current entry from the count
   return Math.max(0, occurrences.length - 1);
@@ -581,6 +582,7 @@ export async function createEventEntry(formData: FormData): Promise<ActionRespon
   const size = formData.get('size');
   const capacity = formData.get('capacity');
   const entryData: EntryInsert = {
+    dayId: day.id,
     type: 'event',
     title: (formData.get('title') as string) || null,
     description: (formData.get('description') as string) || null,

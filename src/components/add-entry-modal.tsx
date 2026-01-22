@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, FormEvent, ChangeEvent } from 'react'
+import { useState, useEffect, FormEvent, ChangeEvent, ReactElement } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -269,7 +269,7 @@ export function AddEntryModal({
     // Don't close modal here - let parent handle it after success/error
   }
 
-  const renderTypeSpecificFields = (): JSX.Element | null => {
+  const renderTypeSpecificFields = (): ReactElement | null => {
     if (!effectiveEntryType) {
       return null
     }

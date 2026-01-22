@@ -1,12 +1,13 @@
 "use client"
 
+import { ReactElement } from 'react'
 import clsx from 'clsx'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Edit, Trash2, Clock, Users, Repeat, MapPin, User, type LucideIcon } from 'lucide-react'
 import type { EntryWithRelations } from '@/types/components'
-import type { Tables } from '../src/types/supabase'
+import type { Tables } from '@/types/supabase'
 
 // Entry type configurations for styling
 const entryConfigs = {
@@ -38,7 +39,7 @@ const entryConfigs = {
 } as const
 
 // Helper function to render field-value pairs
-const renderField = (label: string, value: string | number | null | undefined, className: string = ''): JSX.Element | null => {
+const renderField = (label: string, value: string | number | null | undefined, className: string = ''): ReactElement | null => {
   if (!value && value !== 0) return null
   
   const labelMap: Record<string, string> = {
@@ -116,8 +117,8 @@ interface EntryCardProps {
 export function EntryCard({ entry, isEditor, onEdit, onDelete }: EntryCardProps) {
   const config = entryConfigs[entry.type]
 
-  const renderFields = (): (JSX.Element | null)[] => {
-    const fields: (JSX.Element | null)[] = []
+  const renderFields = (): (ReactElement | null)[] => {
+    const fields: (ReactElement | null)[] = []
     
     switch (entry.type) {
       case 'breakfast':
@@ -145,7 +146,7 @@ export function EntryCard({ entry, isEditor, onEdit, onDelete }: EntryCardProps)
     fields.push(renderField('Time', timeRange))
     
     // Filter out null fields
-    return fields.filter((f): f is JSX.Element => f !== null)
+    return fields.filter((f): f is ReactElement => f !== null)
   }
 
   // Render golf/event card with compact design similar to hotel booking
@@ -154,7 +155,7 @@ export function EntryCard({ entry, isEditor, onEdit, onDelete }: EntryCardProps)
     const confirmedParticipants = entry.guestCount || 0
     const maxCapacity = entry.capacity || 0
     const participationPercentage = maxCapacity > 0 ? (confirmedParticipants / maxCapacity) * 100 : 0
-    const venue = formatVenueType(entry.venueType || entry.location)
+    const venue = formatVenueType((entry.venueType as Tables<'VenueType'> | string | null | undefined) || entry.location)
     const title = entry.title || 'Événement sans titre'
     const description = entry.description || ''
     const descriptionPreview = description.length > 50 ? description.substring(0, 50) + '...' : description
@@ -352,14 +353,14 @@ export function SectionHeader({ title, count, icon: Icon, color, onAdd, isEditor
   }
 
   // Map color to badge variant
-  const getBadgeVariant = (color?: string) => {
+  const getBadgeVariant = (color?: string): "default" | "destructive" | "outline" | "secondary" => {
     if (!color) return 'default'
     // Keep custom colors via className, use default variant
     return 'default'
   }
 
   // Map color to button variant
-  const getButtonVariant = (color?: string) => {
+  const getButtonVariant = (color?: string): "default" | "destructive" | "outline" | "secondary" | "ghost" | "link" => {
     if (!color) return 'default'
     // Map specific colors to variants
     if (color === 'red') return 'destructive'

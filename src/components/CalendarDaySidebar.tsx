@@ -13,14 +13,10 @@ import { createHotelBooking, updateHotelBooking, deleteHotelBooking, createBreak
 import { Coffee, Building, LandPlot, Edit, Trash2, Users, FileText, UtensilsCrossed } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import type { Entry, HotelBooking, BreakfastConfiguration } from "@/types/supabase"
+import type { EntryWithRelations } from "@/types/components"
 import { useRouter } from 'next/navigation'
 import { format } from 'date-fns'
 import { parseYmd } from '@/lib/day-utils'
-
-type EntryWithRelations = Entry & {
-  venueType?: unknown;
-  poc?: unknown;
-}
 
 type HotelBookingWithRelations = HotelBooking & {
   breakfastConfigurations?: BreakfastConfiguration[];
@@ -60,7 +56,7 @@ export function CalendarDaySidebar({
   const [hotelBookingDrawerOpen, setHotelBookingDrawerOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [editingEntry, setEditingEntry] = useState<EntryWithRelations | HotelBookingWithRelations | null>(null)
+  const [editingEntry, setEditingEntry] = useState<EntryWithRelations | null>(null)
   const [editingBooking, setEditingBooking] = useState<HotelBookingWithRelations | null>(null)
   const [editingBreakfast, setEditingBreakfast] = useState<BreakfastConfigWithRelations | null>(null)
   const [defaultBooking, setDefaultBooking] = useState<HotelBookingWithRelations | null>(null)
@@ -79,12 +75,12 @@ export function CalendarDaySidebar({
 
   const openEditModal = (entry: EntryWithRelations | HotelBookingWithRelations) => {
     // Check if it's a hotel booking by looking for checkInDate (hotel bookings don't have a type field)
-    if ((entry as HotelBookingWithRelations).checkInDate) {
+    if ('checkInDate' in entry && entry.checkInDate) {
       // It's a hotel booking
       setEditingBooking(entry as HotelBookingWithRelations)
       setHotelBookingDrawerOpen(true)
       setError(null)
-    } else if (entry.type && ['golf', 'event', 'reservation'].includes(entry.type)) {
+    } else if ('type' in entry && entry.type && ['golf', 'event', 'reservation'].includes(entry.type)) {
       // It's a golf, event, or reservation entry
       setModalType(entry.type as ModalType)
       setModalOpen(true)
@@ -228,12 +224,16 @@ export function CalendarDaySidebar({
     setRecurringOccurrencesCount(0)
 
     if (!type) {
-      const entryType = entry?.type
+      const entryType = 'type' in entry ? entry.type : undefined
       if (entryType && ['golf', 'event', 'reservation'].includes(entryType)) {
         type = entryType as DeleteType
-      } else if (entry?.checkInDate || entry?.checkOutDate) {
+      } else if ('checkInDate' in entry && entry.checkInDate) {
         type = 'booking'
-      } else if (entry?.breakfastDate || entry?.hotelBookingId) {
+      } else if ('checkOutDate' in entry && entry.checkOutDate) {
+        type = 'booking'
+      } else if ('breakfastDate' in entry && entry.breakfastDate) {
+        type = 'breakfast'
+      } else if ('hotelBookingId' in entry && entry.hotelBookingId) {
         type = 'breakfast'
       } else {
         const entryId = entry?.id
@@ -257,7 +257,7 @@ export function CalendarDaySidebar({
       }
     }
 
-    if ((type === 'event' || type === 'golf') && entry?.isRecurring) {
+    if ((type === 'event' || type === 'golf') && 'isRecurring' in entry && entry.isRecurring) {
       try {
         const count = await countRecurringOccurrences(entry.id, type)
         setRecurringOccurrencesCount(count || 0)
@@ -491,12 +491,15 @@ export function CalendarDaySidebar({
                                     let tableBreakdownArray: number[] = []
                                     if (config.tableBreakdown) {
                                       if (Array.isArray(config.tableBreakdown)) {
+                                        // Filter and convert to number array
                                         tableBreakdownArray = config.tableBreakdown
+                                          .filter((item): item is number => typeof item === 'number' && Number.isFinite(item))
                                       } else if (typeof config.tableBreakdown === 'string') {
                                         try {
                                           const parsed = JSON.parse(config.tableBreakdown)
                                           if (Array.isArray(parsed)) {
                                             tableBreakdownArray = parsed
+                                              .filter((item): item is number => typeof item === 'number' && Number.isFinite(item))
                                           }
                                         } catch {
                                           // Ignore parse errors
@@ -743,7 +746,7 @@ export function CalendarDaySidebar({
                         ? 'entrée d&apos;événement'
                         : deleteType === 'reservation'
                           ? 'entrée de réservation'
-                          : (entryToDelete?.type || deleteType) + ' entrée'
+                          : (entryToDelete && 'type' in entryToDelete ? entryToDelete.type : deleteType || '') + ' entrée'
               } ? Cette action ne peut pas être annulée.
               {deleteType === 'booking' && ' Toutes les configurations de petit-déjeuner associées seront également supprimées.'}
             </AlertDialogDescription>

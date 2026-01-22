@@ -2,8 +2,8 @@
 
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
-import type { Tables } from '../src/types/supabase'
-import type { EntryWithRelations } from '../src/types/components'
+import type { Tables } from '@/types/supabase'
+import type { EntryWithRelations } from '@/types/components'
 
 // Helper functions for date formatting
 function weekdayNameBrussels(date: Date): string {

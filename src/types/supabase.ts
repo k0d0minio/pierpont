@@ -71,6 +71,8 @@ export type Database = {
           venueTypeId: number | null
           hotelBookingId: number | null
           isTourOperator: boolean | null
+          isRecurring: boolean | null
+          recurrenceFrequency: 'weekly' | 'biweekly' | 'monthly' | 'yearly' | null
           createdAt: string
           updatedAt: string
         }
@@ -100,6 +102,8 @@ export type Database = {
           venueTypeId?: number | null
           hotelBookingId?: number | null
           isTourOperator?: boolean | null
+          isRecurring?: boolean | null
+          recurrenceFrequency?: 'weekly' | 'biweekly' | 'monthly' | 'yearly' | null
           createdAt?: string
           updatedAt?: string
         }
@@ -129,6 +133,8 @@ export type Database = {
           venueTypeId?: number | null
           hotelBookingId?: number | null
           isTourOperator?: boolean | null
+          isRecurring?: boolean | null
+          recurrenceFrequency?: 'weekly' | 'biweekly' | 'monthly' | 'yearly' | null
           createdAt?: string
           updatedAt?: string
         }

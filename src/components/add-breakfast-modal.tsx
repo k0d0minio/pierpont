@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-import { Tables } from '../src/types/supabase'
+import { Tables } from '@/types/supabase'
 
 interface AddBreakfastModalProps {
   isOpen: boolean;
@@ -43,10 +43,10 @@ export function AddBreakfastModal({
         breakdown = JSON.parse(breakdown)
       } catch {
         // If it's a string like "3+2+1", parse it
-        if (breakdown.includes('+')) {
+        if (typeof breakdown === 'string' && breakdown.includes('+')) {
           return breakdown.split('+').map(s => s.trim()).filter(s => s)
         }
-        return breakdown ? [breakdown] : ['']
+        return breakdown ? [String(breakdown)] : ['']
       }
     }
     if (Array.isArray(breakdown) && breakdown.length > 0) {

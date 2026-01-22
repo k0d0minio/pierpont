@@ -10,9 +10,7 @@ import * as Headless from '@headlessui/react'
 import React, { forwardRef } from 'react'
 import NextLink from 'next/link'
 
-type LinkProps = React.ComponentPropsWithoutRef<typeof NextLink> & {
-  [key: string]: any;
-}
+type LinkProps = React.ComponentPropsWithoutRef<typeof NextLink>
 
 export const Link = forwardRef<HTMLAnchorElement, LinkProps>(function Link(props, ref) {
   return (
