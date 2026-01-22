@@ -429,7 +429,7 @@ export function AddEntryModal({
                   className="mr-2 h-4 w-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500"
                 />
                 <Label htmlFor="isRecurring-golf" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                  Il s'agit d'une entrée récurrente
+                  Il s&apos;agit d&apos;une entrée récurrente
                 </Label>
               </div>
               {isRecurring && (
@@ -577,7 +577,7 @@ export function AddEntryModal({
                   className="mr-2 h-4 w-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500"
                 />
                 <Label htmlFor="isRecurring-event" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                  Il s'agit d'une entrée récurrente
+                  Il s&apos;agit d&apos;une entrée récurrente
                 </Label>
               </div>
               {isRecurring && (
