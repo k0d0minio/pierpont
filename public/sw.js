@@ -23,6 +23,7 @@ self.addEventListener('install', (event) => {
     try {
       await cache.addAll(CORE_ASSETS);
     } catch (e) {
+      console.error('Error adding core assets to cache', e);
       // Ignore failures for optional assets
     }
     self.skipWaiting();
