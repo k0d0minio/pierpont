@@ -74,10 +74,10 @@ export default async function DayPage({ params }: DayPageProps) {
   const reservationEntries = day?.entries?.filter((e: any) => e.type === 'reservation') || [];
 
   return (
-    <div className="font-sans min-h-screen p-6 sm:p-10">
-      <div className="flex items-center justify-between mb-6">
+    <div className="font-sans min-h-screen p-4 sm:p-6 lg:p-10">
+      <AdminIndicator />
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0 mb-6">
         <DayDatePicker dateParam={dateParam} />
-        <AdminIndicator />
       </div>
       <DayViewClient
         hotelBookings={hotelBookings || []}

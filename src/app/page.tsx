@@ -76,7 +76,6 @@ export default async function Home({ searchParams }: HomeProps) {
   return (
     <div className="font-sans h-screen flex flex-col overflow-hidden">
       <AdminIndicator />
-      
       <div className="flex-1 min-h-0">
         <HomeClient
           initialDays={days || []}

@@ -109,8 +109,8 @@ export function DayDatePicker({ dateParam }: DayDatePickerProps) {
   }
 
   return (
-    <div className="w-auto">
-      <InputGroup className="w-64">
+    <div className="w-full sm:w-auto">
+      <InputGroup className="w-full sm:w-64">
         <InputGroupInput
           value={value}
           placeholder="Sélectionner une date"
@@ -121,6 +121,7 @@ export function DayDatePicker({ dateParam }: DayDatePickerProps) {
               setOpen(true)
             }
           }}
+          className="min-h-[44px] text-sm sm:text-base"
         />
         <InputGroupAddon align="inline-end">
           <Popover open={open} onOpenChange={setOpen}>
@@ -129,15 +130,16 @@ export function DayDatePicker({ dateParam }: DayDatePickerProps) {
                 variant="ghost"
                 size="icon-xs"
                 aria-label="Sélectionner une date"
+                className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0"
               >
-                <CalendarIcon />
+                <CalendarIcon className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
                 <span className="sr-only">Sélectionner une date</span>
               </InputGroupButton>
             </PopoverTrigger>
             <PopoverContent
-              className="w-auto overflow-hidden p-0"
-              align="end"
-              alignOffset={-8}
+              className="w-[calc(100vw-2rem)] sm:w-auto max-w-[calc(100vw-2rem)] sm:max-w-none overflow-hidden p-0"
+              align="start"
+              alignOffset={0}
               sideOffset={10}
             >
               <Calendar
@@ -149,6 +151,7 @@ export function DayDatePicker({ dateParam }: DayDatePickerProps) {
                 disabled={disabledDates}
                 fromDate={todayUtc}
                 toDate={oneYearFromToday}
+                className="[--cell-size:--spacing(12)] sm:[--cell-size:--spacing(10)]"
               />
             </PopoverContent>
           </Popover>

@@ -417,10 +417,10 @@ export default function DayViewClient({
         {/* Hotel Bookings Section - Only visible to admin users */}
         {isAuthenticated && (
           <section>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 mb-4">
+              <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
                 <Building className="h-5 w-5 text-zinc-600 dark:text-zinc-400" />
-                <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+                <h2 className="text-base sm:text-lg font-semibold text-zinc-900 dark:text-zinc-100">
                   Réservations d&apos;hôtel
                 </h2>
                 <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
@@ -430,20 +430,23 @@ export default function DayViewClient({
               <Button
                 onClick={openHotelBookingDrawer}
                 variant="default"
-                className="text-sm whitespace-nowrap"
+                className="text-xs sm:text-sm whitespace-nowrap min-h-[44px] px-3 sm:px-4"
               >
-                Ajouter une réservation d&apos;hôtel
+                <span className="hidden sm:inline">Ajouter une réservation d&apos;hôtel</span>
+                <span className="sm:hidden">Ajouter</span>
               </Button>
             </div>
 
             {/* Breakfast Summary */}
             {totalBreakfastGuests > 0 && (
               <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <Coffee className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                  <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                    Total petit-déjeuner : {totalBreakfastGuests} invité{totalBreakfastGuests !== 1 ? 's' : ''}
-                  </span>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                  <div className="flex items-center gap-2">
+                    <Coffee className="h-4 w-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                    <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                      Total petit-déjeuner : {totalBreakfastGuests} invité{totalBreakfastGuests !== 1 ? 's' : ''}
+                    </span>
+                  </div>
                   {breakfastConfigs.length > 0 && (
                     <span className="text-xs text-zinc-600 dark:text-zinc-400">
                       ({breakfastConfigs.map(config => {
@@ -467,26 +470,26 @@ export default function DayViewClient({
                   return (
                     <div
                       key={booking.id}
-                      className="flex items-center justify-between gap-2 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2"
+                      className="flex items-center justify-between gap-2 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2.5 sm:py-2"
                     >
                       <Popover>
                         <PopoverTrigger asChild>
                           <button
                             type="button"
-                            className="flex-1 flex items-center gap-2 text-left hover:opacity-80 transition-opacity"
+                            className="flex-1 flex items-center gap-2 text-left hover:opacity-80 transition-opacity min-h-[44px]"
                           >
-                            <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                            <span className="font-medium text-sm sm:text-base text-zinc-900 dark:text-zinc-100 truncate">
                               {booking.guestName || 'Invité sans nom'}
                             </span>
                             {booking.guestCount && (
-                              <span className="text-sm text-zinc-600 dark:text-zinc-400">
+                              <span className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 whitespace-nowrap">
                                 - {booking.guestCount} invité{booking.guestCount !== 1 ? 's' : ''}
                               </span>
                             )}
-                            <Info className="h-3 w-3 text-zinc-400 dark:text-zinc-500" />
+                            <Info className="h-3.5 w-3.5 sm:h-3 sm:w-3 text-zinc-400 dark:text-zinc-500 flex-shrink-0" />
                           </button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-80" align="start">
+                        <PopoverContent className="w-[calc(100vw-2rem)] sm:w-80 max-w-80" align="start">
                           <div className="space-y-3">
                             <div>
                               <div className="flex items-center gap-2 mb-2">
@@ -544,26 +547,26 @@ export default function DayViewClient({
                           </div>
                         </PopoverContent>
                       </Popover>
-                      <div className="flex gap-1">
+                      <div className="flex gap-1.5 sm:gap-1">
                         <button
                           type="button"
                           onClick={() => openEditModal(booking)}
-                          className="p-1.5 rounded bg-white dark:bg-zinc-800 shadow border border-zinc-200 dark:border-zinc-700 hover:shadow-md transition-all"
+                          className="p-2 sm:p-1.5 rounded bg-white dark:bg-zinc-800 shadow border border-zinc-200 dark:border-zinc-700 hover:shadow-md transition-all min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
                           title="Modifier la réservation"
                           aria-label="Modifier la réservation"
                         >
-                          <svg className="h-3.5 w-3.5 text-zinc-600 dark:text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <svg className="h-4 w-4 sm:h-3.5 sm:w-3.5 text-zinc-600 dark:text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                           </svg>
                         </button>
                         <button
                           type="button"
                           onClick={() => handleDelete(booking, 'booking')}
-                          className="p-1.5 rounded bg-white dark:bg-zinc-800 shadow border border-zinc-200 dark:border-zinc-700 hover:shadow-md transition-all"
+                          className="p-2 sm:p-1.5 rounded bg-white dark:bg-zinc-800 shadow border border-zinc-200 dark:border-zinc-700 hover:shadow-md transition-all min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
                           title="Supprimer la réservation"
                           aria-label="Supprimer la réservation"
                         >
-                          <svg className="h-3.5 w-3.5 text-zinc-600 dark:text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <svg className="h-4 w-4 sm:h-3.5 sm:w-3.5 text-zinc-600 dark:text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                           </svg>
                         </button>
@@ -583,10 +586,10 @@ export default function DayViewClient({
 
         {/* Golf and Events Section */}
         <section>
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 mb-4">
+            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
               <LandPlot className="h-5 w-5 text-zinc-600 dark:text-zinc-400" />
-              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+              <h2 className="text-base sm:text-lg font-semibold text-zinc-900 dark:text-zinc-100">
                 Golf et événements
               </h2>
               <span className="text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-200 px-2 py-1 rounded">
@@ -594,26 +597,28 @@ export default function DayViewClient({
               </span>
             </div>
             {isAuthenticated && (
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                 <Button
                   onClick={() => openModal('golf')}
                   variant="default"
-                  className="text-sm whitespace-nowrap"
+                  className="text-xs sm:text-sm whitespace-nowrap min-h-[44px] px-3 sm:px-4 w-full sm:w-auto"
                 >
-                  Ajouter du golf
+                  <span className="hidden sm:inline">Ajouter du golf</span>
+                  <span className="sm:hidden">Golf</span>
                 </Button>
                 <Button
                   onClick={() => openModal('event')}
                   variant="default"
-                  className="text-sm whitespace-nowrap"
+                  className="text-xs sm:text-sm whitespace-nowrap min-h-[44px] px-3 sm:px-4 w-full sm:w-auto"
                 >
-                  Ajouter un événement
+                  <span className="hidden sm:inline">Ajouter un événement</span>
+                  <span className="sm:hidden">Événement</span>
                 </Button>
               </div>
             )}
           </div>
           {(golfEntries.length > 0 || eventEntries.length > 0) ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
               {golfEntries.map((entry) => (
                 <EntryCard
                   key={entry.id}

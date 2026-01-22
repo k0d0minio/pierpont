@@ -18,12 +18,54 @@ function TooltipProvider({
   )
 }
 
+// Context to share tooltip state for mobile click handling
+const TooltipContext = React.createContext<{
+  open: boolean
+  setOpen: (open: boolean) => void
+  isTouch: boolean
+} | null>(null)
+
+// Hook to detect if device supports touch
+function useIsTouchDevice() {
+  const [isTouch, setIsTouch] = React.useState(false)
+
+  React.useEffect(() => {
+    // Check if device supports touch events
+    const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0
+    setIsTouch(hasTouch)
+  }, [])
+
+  return isTouch
+}
+
 function Tooltip({
   ...props
 }: React.ComponentProps<typeof TooltipPrimitive.Root>) {
+  const isTouch = useIsTouchDevice()
+  const [open, setOpen] = React.useState(false)
+
+  // On mobile, use controlled state for click behavior
+  // On desktop, use default hover behavior
+  if (isTouch) {
+    return (
+      <TooltipProvider>
+        <TooltipContext.Provider value={{ open, setOpen, isTouch }}>
+          <TooltipPrimitive.Root
+            data-slot="tooltip"
+            open={open}
+            onOpenChange={setOpen}
+            {...props}
+          />
+        </TooltipContext.Provider>
+      </TooltipProvider>
+    )
+  }
+
   return (
     <TooltipProvider>
-      <TooltipPrimitive.Root data-slot="tooltip" {...props} />
+      <TooltipContext.Provider value={{ open: false, setOpen: () => {}, isTouch: false }}>
+        <TooltipPrimitive.Root data-slot="tooltip" {...props} />
+      </TooltipContext.Provider>
     </TooltipProvider>
   )
 }
@@ -31,6 +73,37 @@ function Tooltip({
 function TooltipTrigger({
   ...props
 }: React.ComponentProps<typeof TooltipPrimitive.Trigger>) {
+  const context = React.useContext(TooltipContext)
+  const isTouch = context?.isTouch ?? false
+
+  // On mobile, handle click to toggle tooltip
+  if (isTouch && context && React.isValidElement(props.children)) {
+    const handleClick = (e: React.MouseEvent | React.TouchEvent) => {
+      // Toggle tooltip state
+      context.setOpen(!context.open)
+      
+      // Preserve original onClick handler if it exists
+      const originalOnClick = (props.children as React.ReactElement).props?.onClick
+      if (originalOnClick) {
+        originalOnClick(e)
+      }
+    }
+
+    // Clone the child element and add click handler
+    return (
+      <TooltipPrimitive.Trigger
+        data-slot="tooltip-trigger"
+        asChild
+        {...props}
+      >
+        {React.cloneElement(props.children as React.ReactElement, {
+          onClick: handleClick,
+          onTouchEnd: handleClick,
+        })}
+      </TooltipPrimitive.Trigger>
+    )
+  }
+
   return <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...props} />
 }
 

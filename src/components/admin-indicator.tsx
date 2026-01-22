@@ -8,20 +8,8 @@ import { Settings, LogOut } from 'lucide-react'
 export function AdminIndicator() {
   const { isAuthenticated, isLoading, signOut } = useAdminAuth()
 
-  if (isLoading) {
+  if (isLoading || !isAuthenticated) {
     return null
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <div className="fixed bottom-6 right-6 z-50">
-        <Link href="/admin">
-          <Button variant="ghost" className="text-sm text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300">
-            Administrateur
-          </Button>
-        </Link>
-      </div>
-    )
   }
 
   return (

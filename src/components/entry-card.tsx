@@ -1,6 +1,6 @@
 "use client"
 
-import { ReactElement } from 'react'
+import type { ReactElement } from 'react'
 import clsx from 'clsx'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -154,7 +154,6 @@ export function EntryCard({ entry, isEditor, onEdit, onDelete }: EntryCardProps)
     const timeRange = formatTimeRange(entry.startTime, entry.endTime)
     const confirmedParticipants = entry.guestCount || 0
     const maxCapacity = entry.capacity || 0
-    const participationPercentage = maxCapacity > 0 ? (confirmedParticipants / maxCapacity) * 100 : 0
     const venue = formatVenueType((entry.venueType as Tables<'VenueType'> | string | null | undefined) || entry.location)
     const title = entry.title || 'Événement sans titre'
     const description = entry.description || ''
@@ -165,98 +164,120 @@ export function EntryCard({ entry, isEditor, onEdit, onDelete }: EntryCardProps)
     const venueName = venue
 
     return (
-      <div className="flex items-center justify-between gap-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-200">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-medium text-zinc-900 dark:text-zinc-100">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-3 sm:p-4 shadow-sm hover:shadow-md transition-all duration-200">
+        <div className="flex-1 min-w-0 w-full sm:w-auto">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap mb-1 sm:mb-0">
+            <span className="font-medium text-sm sm:text-base text-zinc-900 dark:text-zinc-100 truncate flex-1 min-w-0">
               {title}
             </span>
-            {entry.isRecurring && entry.recurrenceFrequency && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div>
-                    <Repeat className="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Récurrent : {formatRecurrenceFrequency(entry.recurrenceFrequency)}</p>
-                </TooltipContent>
-              </Tooltip>
-            )}
-            {pocName && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div>
-                    <User className="h-4 w-4 text-purple-600 dark:text-purple-400 flex-shrink-0" />
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Point de contact : {pocName}</p>
-                </TooltipContent>
-              </Tooltip>
-            )}
-            {timeRange && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div>
-                    <Clock className="h-4 w-4 text-zinc-500 dark:text-zinc-400 flex-shrink-0" />
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Heure : {timeRange}</p>
-                </TooltipContent>
-              </Tooltip>
-            )}
-            {venueName && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div>
-                    <MapPin className="h-4 w-4 text-zinc-500 dark:text-zinc-400 flex-shrink-0" />
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Lieu : {venueName}</p>
-                </TooltipContent>
-              </Tooltip>
-            )}
-            {(confirmedParticipants > 0 || maxCapacity > 0) && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div>
-                    <Users className="h-4 w-4 text-zinc-500 dark:text-zinc-400 flex-shrink-0" />
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Participants : {confirmedParticipants}{maxCapacity > 0 ? ` / ${maxCapacity}` : ''}</p>
-                </TooltipContent>
-              </Tooltip>
-            )}
+            <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
+              {entry.isRecurring && entry.recurrenceFrequency && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      className="flex items-center justify-center cursor-pointer touch-manipulation"
+                      aria-label="Afficher les détails de récurrence"
+                    >
+                      <Repeat className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Récurrent : {formatRecurrenceFrequency(entry.recurrenceFrequency)}</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              {pocName && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      className="flex items-center justify-center cursor-pointer touch-manipulation"
+                      aria-label="Afficher le point de contact"
+                    >
+                      <User className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-purple-600 dark:text-purple-400 flex-shrink-0" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Point de contact : {pocName}</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              {timeRange && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      className="flex items-center justify-center cursor-pointer touch-manipulation"
+                      aria-label="Afficher l'heure"
+                    >
+                      <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-zinc-500 dark:text-zinc-400 flex-shrink-0" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Heure : {timeRange}</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              {venueName && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      className="flex items-center justify-center cursor-pointer touch-manipulation"
+                      aria-label="Afficher le lieu"
+                    >
+                      <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-zinc-500 dark:text-zinc-400 flex-shrink-0" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Lieu : {venueName}</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              {(confirmedParticipants > 0 || maxCapacity > 0) && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      className="flex items-center justify-center cursor-pointer touch-manipulation"
+                      aria-label="Afficher les participants"
+                    >
+                      <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-zinc-500 dark:text-zinc-400 flex-shrink-0" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Participants : {confirmedParticipants}{maxCapacity > 0 ? ` / ${maxCapacity}` : ''}</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </div>
           </div>
           {descriptionPreview && (
-            <span className="text-sm text-zinc-600 dark:text-zinc-400 block mt-0.5 truncate">
+            <span className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 block mt-0.5 truncate">
               {descriptionPreview}
             </span>
           )}
         </div>
         {isEditor && (
-          <div className="flex gap-1.5">
+          <div className="flex gap-1.5 sm:gap-1.5 flex-shrink-0">
             <button
               type="button"
               onClick={() => onEdit(entry)}
-              className="group/edit p-2 rounded-lg bg-white dark:bg-zinc-800 shadow-sm border border-zinc-200 dark:border-zinc-700 hover:shadow-md hover:scale-105 transition-all duration-200 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-200 dark:hover:border-blue-800"
+              className="group/edit p-2.5 sm:p-2 rounded-lg bg-white dark:bg-zinc-800 shadow-sm border border-zinc-200 dark:border-zinc-700 hover:shadow-md hover:scale-105 transition-all duration-200 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-200 dark:hover:border-blue-800 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
               title="Modifier l'entrée"
               aria-label="Modifier l'entrée"
             >
-              <Edit className="h-4 w-4 text-zinc-600 dark:text-zinc-400 group-hover/edit:text-blue-600 dark:group-hover/edit:text-blue-400 transition-colors" />
+              <Edit className="h-4 w-4 sm:h-4 sm:w-4 text-zinc-600 dark:text-zinc-400 group-hover/edit:text-blue-600 dark:group-hover/edit:text-blue-400 transition-colors" />
             </button>
             <button
               type="button"
               onClick={() => onDelete(entry)}
-              className="group/delete p-2 rounded-lg bg-white dark:bg-zinc-800 shadow-sm border border-zinc-200 dark:border-zinc-700 hover:shadow-md hover:scale-105 transition-all duration-200 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-200 dark:hover:border-red-800"
+              className="group/delete p-2.5 sm:p-2 rounded-lg bg-white dark:bg-zinc-800 shadow-sm border border-zinc-200 dark:border-zinc-700 hover:shadow-md hover:scale-105 transition-all duration-200 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-200 dark:hover:border-red-800 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
               title="Supprimer l'entrée"
               aria-label="Supprimer l'entrée"
             >
-              <Trash2 className="h-4 w-4 text-zinc-600 dark:text-zinc-400 group-hover/delete:text-red-600 dark:group-hover/delete:text-red-400 transition-colors" />
+              <Trash2 className="h-4 w-4 sm:h-4 sm:w-4 text-zinc-600 dark:text-zinc-400 group-hover/delete:text-red-600 dark:group-hover/delete:text-red-400 transition-colors" />
             </button>
           </div>
         )}
@@ -272,35 +293,35 @@ export function EntryCard({ entry, isEditor, onEdit, onDelete }: EntryCardProps)
   // For other entry types, render the traditional card
   return (
     <div className={clsx(
-      'group relative rounded-xl border transition-all duration-200 shadow-sm hover:shadow-md p-5',
+      'group relative rounded-xl border transition-all duration-200 shadow-sm hover:shadow-md p-4 sm:p-5',
       clsx(config.bgColor, config.borderColor)
     )}>
       {/* Action buttons for editors */}
       {isEditor && (
-        <div className="absolute top-2 right-2 flex flex-col items-center gap-1 z-0">
+        <div className="absolute top-2 right-2 flex flex-col items-center gap-1.5 sm:gap-1 z-0">
           <button
             type="button"
             onClick={() => onEdit(entry)}
-            className="group/edit p-1.5 rounded-full bg-white dark:bg-zinc-800 shadow-md border border-zinc-200 dark:border-zinc-700 hover:shadow-lg hover:scale-105 transition-all duration-200 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+            className="group/edit p-2 sm:p-1.5 rounded-full bg-white dark:bg-zinc-800 shadow-md border border-zinc-200 dark:border-zinc-700 hover:shadow-lg hover:scale-105 transition-all duration-200 hover:bg-blue-50 dark:hover:bg-blue-900/20 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
             aria-label="Modifier l'entrée"
             title="Modifier l'entrée"
           >
-            <Edit className="h-3.5 w-3.5 text-zinc-600 dark:text-zinc-400 group-hover/edit:text-blue-600 dark:group-hover/edit:text-blue-400 transition-colors" />
+            <Edit className="h-4 w-4 sm:h-3.5 sm:w-3.5 text-zinc-600 dark:text-zinc-400 group-hover/edit:text-blue-600 dark:group-hover/edit:text-blue-400 transition-colors" />
           </button>
           <button
             type="button"
             onClick={() => onDelete(entry)}
-            className="group/delete p-1.5 rounded-full bg-white dark:bg-zinc-800 shadow-md border border-zinc-200 dark:border-zinc-700 hover:shadow-lg hover:scale-105 transition-all duration-200 hover:bg-red-50 dark:hover:bg-red-900/20"
+            className="group/delete p-2 sm:p-1.5 rounded-full bg-white dark:bg-zinc-800 shadow-md border border-zinc-200 dark:border-zinc-700 hover:shadow-lg hover:scale-105 transition-all duration-200 hover:bg-red-50 dark:hover:bg-red-900/20 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center"
             aria-label="Supprimer l'entrée"
             title="Supprimer l'entrée"
           >
-            <Trash2 className="h-3.5 w-3.5 text-zinc-600 dark:text-zinc-400 group-hover/delete:text-red-600 dark:group-hover/delete:text-red-400 transition-colors" />
+            <Trash2 className="h-4 w-4 sm:h-3.5 sm:w-3.5 text-zinc-600 dark:text-zinc-400 group-hover/delete:text-red-600 dark:group-hover/delete:text-red-400 transition-colors" />
           </button>
         </div>
       )}
 
       {/* Dynamic fields */}
-      <div className="pr-12 space-y-2">
+      <div className="pr-14 sm:pr-12 space-y-2">
         {renderFields()}
         
         {/* Tour Operator flag */}

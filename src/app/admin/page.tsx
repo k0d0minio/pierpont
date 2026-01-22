@@ -61,7 +61,7 @@ export default function AdminLogin() {
     <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-900 p-4">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <Logo size="lg" className="justify-center mb-4" />
+          {/* <Logo size="lg" className="justify-center mb-4" /> */}
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
             Accès administrateur
           </h1>
@@ -107,7 +107,7 @@ export default function AdminLogin() {
             onClick={() => router.push('/')}
             className="text-sm text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
           >
-            ← Retour à la vue hebdomadaire
+            ← Retour
           </Button>
         </div>
       </div>

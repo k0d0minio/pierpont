@@ -86,18 +86,28 @@ export default function DayNav({ dateParam }: DayNavProps) {
     <div className="flex items-center justify-between gap-2">
       {isAuthenticated && (
         <Link href="/">
-          <Button variant="ghost" aria-label="Retour à l'emploi du temps" className="text-xs sm:text-sm flex items-center gap-1">
-            <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4" />
-            Retour
+          <Button variant="ghost" aria-label="Retour à l'emploi du temps" className="text-xs sm:text-sm flex items-center gap-1 min-h-[44px] min-w-[44px] sm:min-w-0 px-2 sm:px-3">
+            <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Retour</span>
           </Button>
         </Link>
       )}
-      <div className="hidden sm:flex items-center gap-2">
-        <Button variant="ghost" aria-label="Jour précédent" onClick={goPrev} className="text-base sm:text-sm">
-          <ChevronLeft className="h-4 w-4" />
+      <div className="flex items-center gap-2">
+        <Button 
+          variant="ghost" 
+          aria-label="Jour précédent" 
+          onClick={goPrev} 
+          className="text-base sm:text-sm min-h-[44px] min-w-[44px] p-0 flex items-center justify-center"
+        >
+          <ChevronLeft className="h-5 w-5 sm:h-4 sm:w-4" />
         </Button>
-        <Button variant="ghost" aria-label="Jour suivant" onClick={goNext} className="text-base sm:text-sm">
-          <ChevronRight className="h-4 w-4" />
+        <Button 
+          variant="ghost" 
+          aria-label="Jour suivant" 
+          onClick={goNext} 
+          className="text-base sm:text-sm min-h-[44px] min-w-[44px] p-0 flex items-center justify-center"
+        >
+          <ChevronRight className="h-5 w-5 sm:h-4 sm:w-4" />
         </Button>
       </div>
     </div>
