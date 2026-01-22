@@ -86,17 +86,17 @@ export default function DayNav({ dateParam }: DayNavProps) {
     <div className="flex items-center justify-between gap-2">
       {isAuthenticated && (
         <Link href="/">
-          <Button variant="ghost" aria-label="Back to Schedule" className="text-xs sm:text-sm flex items-center gap-1">
+          <Button variant="ghost" aria-label="Retour à l'emploi du temps" className="text-xs sm:text-sm flex items-center gap-1">
             <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4" />
-            Back
+            Retour
           </Button>
         </Link>
       )}
       <div className="hidden sm:flex items-center gap-2">
-        <Button variant="ghost" aria-label="Previous day" onClick={goPrev} className="text-base sm:text-sm">
+        <Button variant="ghost" aria-label="Jour précédent" onClick={goPrev} className="text-base sm:text-sm">
           <ChevronLeft className="h-4 w-4" />
         </Button>
-        <Button variant="ghost" aria-label="Next day" onClick={goNext} className="text-base sm:text-sm">
+        <Button variant="ghost" aria-label="Jour suivant" onClick={goNext} className="text-base sm:text-sm">
           <ChevronRight className="h-4 w-4" />
         </Button>
       </div>

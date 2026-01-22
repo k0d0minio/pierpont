@@ -3,6 +3,7 @@
 import clsx from 'clsx'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Edit, Trash2, Clock, Users, Repeat, MapPin, User, type LucideIcon } from 'lucide-react'
 import type { EntryWithRelations } from '@/types/components'
 import type { Tables } from '../src/types/supabase'
@@ -40,10 +41,21 @@ const entryConfigs = {
 const renderField = (label: string, value: string | number | null | undefined, className: string = ''): JSX.Element | null => {
   if (!value && value !== 0) return null
   
+  const labelMap: Record<string, string> = {
+    'Guest': 'Invité',
+    'Guests': 'Invités',
+    'Phone': 'Téléphone',
+    'Email': 'Email',
+    'Time': 'Heure',
+    'Notes': 'Notes'
+  }
+  
+  const translatedLabel = labelMap[label] || label
+  
   return (
     <div key={label} className={clsx('flex justify-between items-start gap-2', className)}>
       <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400 flex-shrink-0">
-        {label}:
+        {translatedLabel}:
       </span>
       <span className="text-sm text-zinc-900 dark:text-zinc-100 text-right">
         {value}
@@ -78,18 +90,18 @@ const formatVenueType = (venueType: Tables<'VenueType'> | string | null | undefi
 const formatTimeRange = (startTime: string | null | undefined, endTime: string | null | undefined): string | null => {
   if (!startTime && !endTime) return null
   if (startTime && endTime) return `${startTime} - ${endTime}`
-  if (startTime) return `From ${startTime}`
-  if (endTime) return `Until ${endTime}`
+  if (startTime) return `À partir de ${startTime}`
+  if (endTime) return `Jusqu'à ${endTime}`
   return null
 }
 
 // Helper function to format recurrence frequency
 const formatRecurrenceFrequency = (frequency: string | null | undefined): string => {
   const frequencyMap: Record<string, string> = {
-    'weekly': 'Weekly',
-    'biweekly': 'Biweekly',
-    'monthly': 'Monthly',
-    'yearly': 'Yearly'
+    'weekly': 'Hebdomadaire',
+    'biweekly': 'Bihebdomadaire',
+    'monthly': 'Mensuel',
+    'yearly': 'Annuel'
   }
   return frequencyMap[frequency || ''] || frequency || ''
 }
@@ -111,7 +123,6 @@ export function EntryCard({ entry, isEditor, onEdit, onDelete }: EntryCardProps)
       case 'breakfast':
       case 'hotel':
         fields.push(renderField('Guest', entry.guestName))
-        fields.push(renderField('Room', entry.roomNumber))
         fields.push(renderField('Guests', entry.guestCount))
         break
         
@@ -137,119 +148,131 @@ export function EntryCard({ entry, isEditor, onEdit, onDelete }: EntryCardProps)
     return fields.filter((f): f is JSX.Element => f !== null)
   }
 
-  // Render golf/event card with modern design
+  // Render golf/event card with compact design similar to hotel booking
   const renderGolfEventCard = () => {
     const timeRange = formatTimeRange(entry.startTime, entry.endTime)
     const confirmedParticipants = entry.guestCount || 0
     const maxCapacity = entry.capacity || 0
     const participationPercentage = maxCapacity > 0 ? (confirmedParticipants / maxCapacity) * 100 : 0
     const venue = formatVenueType(entry.venueType || entry.location)
+    const title = entry.title || 'Événement sans titre'
+    const description = entry.description || ''
+    const descriptionPreview = description.length > 50 ? description.substring(0, 50) + '...' : description
+    
+    // Get POC and venue names from relations (same way as popover does)
+    const pocName = entry.poc?.name || null
+    const venueName = venue
 
     return (
-      <div className="space-y-4">
-        {/* Title and Description */}
-        <div>
-          <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-1">
-            {entry.title || 'Untitled Event'}
-          </h3>
-          {entry.description && (
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">
-              {entry.description}
-            </p>
-          )}
-        </div>
-
-        {/* Participants with visual indicator */}
-        {(confirmedParticipants > 0 || maxCapacity > 0) && (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
-                <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                  Participants
-                </span>
-              </div>
-              <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                {confirmedParticipants}{maxCapacity > 0 ? ` / ${maxCapacity}` : ''}
-              </span>
-            </div>
-            {maxCapacity > 0 && (
-              <div className="w-full bg-zinc-200 dark:bg-zinc-700 rounded-full h-2 overflow-hidden">
-                <div
-                  className={clsx(
-                    'h-full rounded-full transition-all',
-                    participationPercentage >= 100
-                      ? 'bg-red-500 dark:bg-red-600'
-                      : participationPercentage >= 80
-                      ? 'bg-amber-500 dark:bg-amber-600'
-                      : 'bg-emerald-500 dark:bg-emerald-600'
-                  )}
-                  style={{ width: `${Math.min(participationPercentage, 100)}%` }}
-                />
-              </div>
+      <div className="flex items-center justify-between gap-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-200">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-medium text-zinc-900 dark:text-zinc-100">
+              {title}
+            </span>
+            {entry.isRecurring && entry.recurrenceFrequency && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div>
+                    <Repeat className="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Récurrent : {formatRecurrenceFrequency(entry.recurrenceFrequency)}</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
+            {pocName && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div>
+                    <User className="h-4 w-4 text-purple-600 dark:text-purple-400 flex-shrink-0" />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Point de contact : {pocName}</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
+            {timeRange && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div>
+                    <Clock className="h-4 w-4 text-zinc-500 dark:text-zinc-400 flex-shrink-0" />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Heure : {timeRange}</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
+            {venueName && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div>
+                    <MapPin className="h-4 w-4 text-zinc-500 dark:text-zinc-400 flex-shrink-0" />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Lieu : {venueName}</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
+            {(confirmedParticipants > 0 || maxCapacity > 0) && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div>
+                    <Users className="h-4 w-4 text-zinc-500 dark:text-zinc-400 flex-shrink-0" />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Participants : {confirmedParticipants}{maxCapacity > 0 ? ` / ${maxCapacity}` : ''}</p>
+                </TooltipContent>
+              </Tooltip>
             )}
           </div>
-        )}
-
-        {/* Time and Venue Row */}
-        <div className="flex items-center gap-4 flex-wrap">
-          {timeRange && (
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
-              <span className="text-sm text-zinc-700 dark:text-zinc-300 font-medium">
-                {timeRange}
-              </span>
-            </div>
-          )}
-          {venue && (
-            <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
-              <span className="text-sm text-zinc-700 dark:text-zinc-300">
-                {venue}
-              </span>
-            </div>
+          {descriptionPreview && (
+            <span className="text-sm text-zinc-600 dark:text-zinc-400 block mt-0.5 truncate">
+              {descriptionPreview}
+            </span>
           )}
         </div>
-
-        {/* Recurring indicator and POC */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {entry.isRecurring && entry.recurrenceFrequency && (
-            <div className="flex items-center gap-2">
-              <Repeat className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-              <span className="text-xs font-medium text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded-full">
-                {formatRecurrenceFrequency(entry.recurrenceFrequency)}
-              </span>
-            </div>
-          )}
-          {entry.poc?.name && (
-            <div className="flex items-center gap-2">
-              <User className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-              <span className="text-xs font-medium text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/30 px-2 py-1 rounded-full">
-                {entry.poc.name}
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* Notes */}
-        {entry.notes && (
-          <div className="pt-3 border-t border-zinc-200 dark:border-zinc-700">
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">
-              {entry.notes}
-            </p>
+        {isEditor && (
+          <div className="flex gap-1.5">
+            <button
+              type="button"
+              onClick={() => onEdit(entry)}
+              className="group/edit p-2 rounded-lg bg-white dark:bg-zinc-800 shadow-sm border border-zinc-200 dark:border-zinc-700 hover:shadow-md hover:scale-105 transition-all duration-200 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-200 dark:hover:border-blue-800"
+              title="Modifier l'entrée"
+              aria-label="Modifier l'entrée"
+            >
+              <Edit className="h-4 w-4 text-zinc-600 dark:text-zinc-400 group-hover/edit:text-blue-600 dark:group-hover/edit:text-blue-400 transition-colors" />
+            </button>
+            <button
+              type="button"
+              onClick={() => onDelete(entry)}
+              className="group/delete p-2 rounded-lg bg-white dark:bg-zinc-800 shadow-sm border border-zinc-200 dark:border-zinc-700 hover:shadow-md hover:scale-105 transition-all duration-200 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-200 dark:hover:border-red-800"
+              title="Supprimer l'entrée"
+              aria-label="Supprimer l'entrée"
+            >
+              <Trash2 className="h-4 w-4 text-zinc-600 dark:text-zinc-400 group-hover/delete:text-red-600 dark:group-hover/delete:text-red-400 transition-colors" />
+            </button>
           </div>
         )}
       </div>
     )
   }
 
+  // For golf/event entries, render the compact card directly
+  if (entry.type === 'golf' || entry.type === 'event') {
+    return renderGolfEventCard()
+  }
+
+  // For other entry types, render the traditional card
   return (
     <div className={clsx(
-      'group relative rounded-xl border p-5 transition-all duration-200 hover:shadow-lg',
-      (entry.type === 'golf' || entry.type === 'event') 
-        ? 'bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700'
-        : clsx(config.bgColor, config.borderColor),
-      'hover:scale-[1.01]'
+      'group relative rounded-xl border transition-all duration-200 shadow-sm hover:shadow-md p-5',
+      clsx(config.bgColor, config.borderColor)
     )}>
       {/* Action buttons for editors */}
       {isEditor && (
@@ -258,8 +281,8 @@ export function EntryCard({ entry, isEditor, onEdit, onDelete }: EntryCardProps)
             type="button"
             onClick={() => onEdit(entry)}
             className="group/edit p-1.5 rounded-full bg-white dark:bg-zinc-800 shadow-md border border-zinc-200 dark:border-zinc-700 hover:shadow-lg hover:scale-105 transition-all duration-200 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-            aria-label="Edit entry"
-            title="Edit entry"
+            aria-label="Modifier l'entrée"
+            title="Modifier l'entrée"
           >
             <Edit className="h-3.5 w-3.5 text-zinc-600 dark:text-zinc-400 group-hover/edit:text-blue-600 dark:group-hover/edit:text-blue-400 transition-colors" />
           </button>
@@ -267,8 +290,8 @@ export function EntryCard({ entry, isEditor, onEdit, onDelete }: EntryCardProps)
             type="button"
             onClick={() => onDelete(entry)}
             className="group/delete p-1.5 rounded-full bg-white dark:bg-zinc-800 shadow-md border border-zinc-200 dark:border-zinc-700 hover:shadow-lg hover:scale-105 transition-all duration-200 hover:bg-red-50 dark:hover:bg-red-900/20"
-            aria-label="Delete entry"
-            title="Delete entry"
+            aria-label="Supprimer l'entrée"
+            title="Supprimer l'entrée"
           >
             <Trash2 className="h-3.5 w-3.5 text-zinc-600 dark:text-zinc-400 group-hover/delete:text-red-600 dark:group-hover/delete:text-red-400 transition-colors" />
           </button>
@@ -276,37 +299,31 @@ export function EntryCard({ entry, isEditor, onEdit, onDelete }: EntryCardProps)
       )}
 
       {/* Dynamic fields */}
-      <div className={clsx('pr-12', (entry.type === 'golf' || entry.type === 'event') ? '' : 'space-y-2')}>
-        {(entry.type === 'golf' || entry.type === 'event') ? (
-          renderGolfEventCard()
-        ) : (
-          <>
-            {renderFields()}
-            
-            {/* Tour Operator flag */}
-            {entry.isTourOperator && (
-              <div className="flex items-center gap-2 pt-2 border-t border-zinc-200 dark:border-zinc-700">
-                <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
-                  Tour Operator
-                </span>
-                <Badge variant="secondary" className="text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-200">
-                  ✓
-                </Badge>
-              </div>
-            )}
-            
-            {/* Notes */}
-            {entry.notes && (
-              <div className="pt-2 border-t border-zinc-200 dark:border-zinc-700">
-                <div className="text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1">
-                  Notes:
-                </div>
-                <div className="text-sm text-zinc-700 dark:text-zinc-300">
-                  {entry.notes}
-                </div>
-              </div>
-            )}
-          </>
+      <div className="pr-12 space-y-2">
+        {renderFields()}
+        
+        {/* Tour Operator flag */}
+        {entry.isTourOperator && (
+          <div className="flex items-center gap-2 pt-2 border-t border-zinc-200 dark:border-zinc-700">
+            <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
+              Opérateur touristique
+            </span>
+            <Badge variant="secondary" className="text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-200">
+              ✓
+            </Badge>
+          </div>
+        )}
+        
+        {/* Notes */}
+        {entry.notes && (
+          <div className="pt-2 border-t border-zinc-200 dark:border-zinc-700">
+            <div className="text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1">
+              Notes :
+            </div>
+            <div className="text-sm text-zinc-700 dark:text-zinc-300">
+              {entry.notes}
+            </div>
+          </div>
         )}
       </div>
     </div>
@@ -325,12 +342,12 @@ interface SectionHeaderProps {
 export function SectionHeader({ title, count, icon: Icon, color, onAdd, isEditor }: SectionHeaderProps) {
   const getButtonText = (title: string): string => {
     switch (title) {
-      case 'Breakfast': return 'Add Breakfast'
-      case 'Hotel Guests': return 'Add Hotel Guest'
-      case 'Golf': return 'Add Golf'
-      case 'Events': return 'Add Event'
-      case 'Reservations': return 'Add Reservation'
-      default: return `Add ${title}`
+      case 'Breakfast': return 'Ajouter un petit-déjeuner'
+      case 'Hotel Guests': return 'Ajouter un invité d\'hôtel'
+      case 'Golf': return 'Ajouter du golf'
+      case 'Events': return 'Ajouter un événement'
+      case 'Reservations': return 'Ajouter une réservation'
+      default: return `Ajouter ${title}`
     }
   }
 

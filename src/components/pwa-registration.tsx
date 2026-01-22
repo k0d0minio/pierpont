@@ -146,7 +146,7 @@ export default function PWARegistration() {
   return (
     <>
       {isRefreshing && (
-        <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center py-2 text-xs text-white bg-emerald-600 shadow">Refreshing…</div>
+        <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center py-2 text-xs text-white bg-emerald-600 shadow">Actualisation…</div>
       )}
 
       {canInstall && !isIOSStandalone && (
@@ -155,7 +155,7 @@ export default function PWARegistration() {
           onClick={() => window.__promptPWAInstall?.()}
           className="fixed bottom-4 right-4 z-50 rounded-full bg-emerald-600 text-white shadow-lg px-4 py-2 text-sm hover:bg-emerald-700"
         >
-          Install App
+          Installer l'application
         </Button>
       )}
 
@@ -163,16 +163,16 @@ export default function PWARegistration() {
         <Dialog open={true} onOpenChange={(open) => { if (!open) { setShowIOSBanner(false); localStorage.setItem('iosInstallBannerDismissed', '1') } }}>
           <DialogContent className="sm:max-w-sm">
             <DialogHeader>
-              <DialogTitle>Install this app</DialogTitle>
+              <DialogTitle>Installer cette application</DialogTitle>
               <DialogDescription>
-                Add to your Home Screen for a faster, fullscreen experience.
+                Ajoutez à votre écran d'accueil pour une expérience plus rapide et en plein écran.
               </DialogDescription>
             </DialogHeader>
             <p className="text-sm text-zinc-600 dark:text-zinc-300">
-              On iPhone/iPad: tap <span aria-hidden>Share</span> and then <strong>Add to Home Screen</strong>.
+              Sur iPhone/iPad : appuyez sur <span aria-hidden>Partager</span> puis <strong>Ajouter à l'écran d'accueil</strong>.
             </p>
             <DialogFooter>
-              <Button variant="ghost" onClick={() => { setShowIOSBanner(false); localStorage.setItem('iosInstallBannerDismissed', '1') }}>Dismiss</Button>
+              <Button variant="ghost" onClick={() => { setShowIOSBanner(false); localStorage.setItem('iosInstallBannerDismissed', '1') }}>Ignorer</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

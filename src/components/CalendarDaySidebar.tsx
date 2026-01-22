@@ -4,14 +4,17 @@ import { useState } from 'react'
 import { EntryCard } from "@/components/entry-card"
 import { AddEntryModal } from "@/components/add-entry-modal"
 import { AddBreakfastModal } from "@/components/add-breakfast-modal"
+import { AddHotelBookingDrawer } from "@/components/add-hotel-booking-drawer"
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogFooter, AlertDialogDescription } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { useAdminAuth } from "@/lib/AdminAuthProvider"
 import { createHotelBooking, updateHotelBooking, deleteHotelBooking, createBreakfastConfiguration, updateBreakfastConfiguration, deleteBreakfastConfiguration, createGolfEntry, deleteGolfEntry, createEventEntry, deleteEventEntry, createReservationEntry, deleteReservationEntry, updateGolfEntry, updateEventEntry, updateReservationEntry, countRecurringOccurrences } from "@/app/day/[date]/actions"
-import { Coffee, Building, LandPlot, Calendar as CalendarIcon, Users, CalendarDays, Clock, UtensilsCrossed } from 'lucide-react'
+import { Coffee, Building, LandPlot, Edit, Trash2, Users, FileText, UtensilsCrossed } from 'lucide-react'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import type { Entry, HotelBooking, BreakfastConfiguration } from "@/types/supabase"
 import { useRouter } from 'next/navigation'
+import { format } from 'date-fns'
 import { parseYmd } from '@/lib/day-utils'
 
 type EntryWithRelations = Entry & {
@@ -54,9 +57,11 @@ export function CalendarDaySidebar({
   const [modalOpen, setModalOpen] = useState(false)
   const [modalType, setModalType] = useState<ModalType>(null)
   const [breakfastModalOpen, setBreakfastModalOpen] = useState(false)
+  const [hotelBookingDrawerOpen, setHotelBookingDrawerOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [editingEntry, setEditingEntry] = useState<EntryWithRelations | HotelBookingWithRelations | null>(null)
+  const [editingBooking, setEditingBooking] = useState<HotelBookingWithRelations | null>(null)
   const [editingBreakfast, setEditingBreakfast] = useState<BreakfastConfigWithRelations | null>(null)
   const [defaultBooking, setDefaultBooking] = useState<HotelBookingWithRelations | null>(null)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
@@ -73,10 +78,34 @@ export function CalendarDaySidebar({
   }
 
   const openEditModal = (entry: EntryWithRelations | HotelBookingWithRelations) => {
-    setModalType((entry.type || 'hotel') as ModalType)
-    setModalOpen(true)
+    // Check if it's a hotel booking by looking for checkInDate (hotel bookings don't have a type field)
+    if ((entry as HotelBookingWithRelations).checkInDate) {
+      // It's a hotel booking
+      setEditingBooking(entry as HotelBookingWithRelations)
+      setHotelBookingDrawerOpen(true)
+      setError(null)
+    } else if (entry.type && ['golf', 'event', 'reservation'].includes(entry.type)) {
+      // It's a golf, event, or reservation entry
+      setModalType(entry.type as ModalType)
+      setModalOpen(true)
+      setError(null)
+      setEditingEntry(entry as EntryWithRelations)
+    } else {
+      // Fallback (shouldn't happen, but handle gracefully)
+      setError('Unknown entry type')
+    }
+  }
+
+  const openHotelBookingDrawer = () => {
+    setEditingBooking(null)
+    setHotelBookingDrawerOpen(true)
     setError(null)
-    setEditingEntry(entry)
+  }
+
+  const closeHotelBookingDrawer = () => {
+    setHotelBookingDrawerOpen(false)
+    setError(null)
+    setEditingBooking(null)
   }
 
   const openBreakfastModal = (booking: HotelBookingWithRelations | null = null, config: BreakfastConfigWithRelations | null = null) => {
@@ -109,12 +138,12 @@ export function CalendarDaySidebar({
     try {
       let result: { ok: boolean; error?: string } | undefined
       const isEditMode = !!editingEntry
+      
+      // Get entry type from form data (set by the modal) or fall back to modalType
+      const entryType = formData.get('type') as string || modalType
 
       if (isEditMode) {
-        switch (modalType) {
-          case 'hotel':
-            result = await updateHotelBooking(formData)
-            break
+        switch (entryType) {
           case 'golf':
             result = await updateGolfEntry(formData)
             break
@@ -125,14 +154,11 @@ export function CalendarDaySidebar({
             result = await updateReservationEntry(formData)
             break
           default:
-            setError('Unknown entry type')
+            setError('Type d\'entrée inconnu')
             return
         }
       } else {
-        switch (modalType) {
-          case 'hotel':
-            result = await createHotelBooking(formData)
-            break
+        switch (entryType) {
           case 'golf':
             result = await createGolfEntry(formData)
             break
@@ -143,7 +169,7 @@ export function CalendarDaySidebar({
             result = await createReservationEntry(formData)
             break
           default:
-            setError('Unknown entry type')
+            setError('Type d\'entrée inconnu')
             return
         }
       }
@@ -153,11 +179,11 @@ export function CalendarDaySidebar({
         router.refresh()
         onDataChange?.()
       } else {
-        setError(result?.error || `Failed to ${isEditMode ? 'update' : 'create'} entry`)
+        setError(result?.error || `Échec de la ${isEditMode ? 'mise à jour' : 'création'} de l'entrée`)
       }
     } catch (err) {
       console.error('Form submission error:', err)
-      setError('An unexpected error occurred')
+      setError('Une erreur inattendue s\'est produite')
     } finally {
       setIsSubmitting(false)
     }
@@ -184,11 +210,11 @@ export function CalendarDaySidebar({
         router.refresh()
         onDataChange?.()
       } else {
-        setError(result?.error || `Failed to ${isEditMode ? 'update' : 'create'} breakfast configuration`)
+        setError(result?.error || `Échec de la ${isEditMode ? 'mise à jour' : 'création'} de la configuration de petit-déjeuner`)
       }
     } catch (err) {
       console.error('Breakfast form submission error:', err)
-      setError('An unexpected error occurred')
+      setError('Une erreur inattendue s\'est produite')
     } finally {
       setIsSubmitting(false)
     }
@@ -325,7 +351,7 @@ export function CalendarDaySidebar({
   if (isLoading) {
     return (
       <div className="h-full flex items-center justify-center">
-        <div className="text-center py-8">Loading...</div>
+        <div className="text-center py-8">Chargement...</div>
       </div>
     )
   }
@@ -334,79 +360,57 @@ export function CalendarDaySidebar({
     return (
       <div className="h-full flex items-center justify-center p-8">
         <div className="text-center text-zinc-500 dark:text-zinc-400">
-          <p className="text-lg mb-2">Select a date</p>
-          <p className="text-sm">Choose a date from the calendar to view details</p>
+          <p className="text-xl mb-3">Sélectionner une date</p>
+          <p className="text-base">Choisissez une date dans le calendrier pour voir les détails</p>
         </div>
       </div>
     )
   }
 
-  // Format date for display
-  const formatDateDisplay = (dateStr: string): string => {
-    const date = parseYmd(dateStr)
-    return new Intl.DateTimeFormat('en-GB', {
-      timeZone: 'Europe/Brussels',
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric'
-    }).format(date)
-  }
-
   return (
     <div className="h-full flex flex-col">
-      {/* Date Header */}
-      {dateParam && (
-        <div className="sticky top-0 z-10 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-700 px-6 py-4">
-          <div className="flex items-center gap-2">
-            <CalendarIcon className="h-5 w-5 text-zinc-600 dark:text-zinc-400" />
-            <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
-              {formatDateDisplay(dateParam)}
-            </h1>
-          </div>
-        </div>
-      )}
-      
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
-        {/* Hotel Bookings Section */}
-        {isAuthenticated && (
+      <div className="flex-1 overflow-y-auto p-8 lg:p-10">
+        <div className="flex items-center justify-center min-h-full">
+          <div className="w-full max-w-2xl space-y-8">
+            {/* Hotel Bookings Section */}
+            {isAuthenticated && (
           <section>
-            <div className="flex items-center justify-between mb-5">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
-                  <Building className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-lg bg-blue-100 dark:bg-blue-900/30">
+                  <Building className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
-                  <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
-                    Hotel Bookings
+                  <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+                    Réservations d'hôtel
                   </h2>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                    {totalHotelGuests} guest{totalHotelGuests !== 1 ? 's' : ''}
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                    {totalHotelGuests} invité{totalHotelGuests !== 1 ? 's' : ''}
                   </p>
                 </div>
               </div>
               <Button
-                onClick={() => openModal('hotel')}
+                onClick={openHotelBookingDrawer}
                 variant="default"
-                size="sm"
-                className="text-sm"
+                size="default"
+                className="text-base"
               >
-                Add Booking
+                Ajouter une réservation
               </Button>
             </div>
 
             {totalBreakfastGuests > 0 && (
-              <div className="mb-5 p-4 bg-gradient-to-r from-amber-50 to-amber-100/50 dark:from-amber-950/20 dark:to-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-xl">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-amber-200 dark:bg-amber-900/40">
-                    <Coffee className="h-5 w-5 text-amber-700 dark:text-amber-400" />
+              <div className="mb-6 p-5 bg-gradient-to-r from-amber-50 to-amber-100/50 dark:from-amber-950/20 dark:to-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-xl">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 rounded-lg bg-amber-200 dark:bg-amber-900/40">
+                    <Coffee className="h-6 w-6 text-amber-700 dark:text-amber-400" />
                   </div>
                   <div className="flex-1">
-                    <div className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                      Total Breakfast: {totalBreakfastGuests} guest{totalBreakfastGuests !== 1 ? 's' : ''}
+                    <div className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+                      Total petit-déjeuner : {totalBreakfastGuests} invité{totalBreakfastGuests !== 1 ? 's' : ''}
                     </div>
                     {breakfastConfigs.length > 0 && (
-                      <div className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
+                      <div className="text-sm text-zinc-600 dark:text-zinc-400 mt-2">
                         {breakfastConfigs.map(config => {
                           const breakdown = formatTableBreakdown(config.tableBreakdown)
                           return breakdown || config.totalGuests
@@ -419,186 +423,182 @@ export function CalendarDaySidebar({
             )}
 
             {hotelBookings.length > 0 ? (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {hotelBookings.map((booking) => {
-                  const bookingBreakfast = breakfastConfigs.find(
-                    config => config.hotelBookingId === booking.id && config.breakfastDate === dateParam
+                  // Get all breakfast configurations for this booking
+                  const bookingBreakfastConfigs = breakfastConfigs.filter(
+                    config => config.hotelBookingId === booking.id
                   )
-                  const nights = Math.ceil((new Date(booking.checkOutDate).getTime() - new Date(booking.checkInDate).getTime()) / (1000 * 60 * 60 * 24))
+                  const hasBreakfast = bookingBreakfastConfigs.length > 0
+                  
+                  // Get all reservation entries for this booking
+                  const bookingReservations = reservationEntries.filter(
+                    entry => entry.hotelBookingId === booking.id
+                  )
+                  const hasReservations = bookingReservations.length > 0
+                  
+                  // Format dates as "Jan 4, 2026"
+                  const checkInDate = parseYmd(booking.checkInDate)
+                  const checkOutDate = parseYmd(booking.checkOutDate)
+                  const dateRange = `${format(checkInDate, 'MMM d, yyyy')} - ${format(checkOutDate, 'MMM d, yyyy')}`
 
                   return (
                     <div
                       key={booking.id}
-                      className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow"
+                      className="flex items-center justify-between gap-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-200"
                     >
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex-1">
-                          {/* Guest Name and Tour Operator Badge */}
-                          <div className="flex items-center gap-2 mb-4">
-                            <h3 className="font-semibold text-lg text-zinc-900 dark:text-zinc-100">
-                              {booking.guestName || 'Unnamed Guest'}
-                            </h3>
-                            {booking.isTourOperator && (
-                              <span className="text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-200 px-2 py-1 rounded-full font-medium">
-                                Tour Operator
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Info Row: Room, Guests, Stay */}
-                          <div className="flex items-center gap-4 flex-wrap mb-4">
-                            {booking.roomNumber && (
-                              <div className="flex items-center gap-2">
-                                <Building className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
-                                <span className="text-sm text-zinc-700 dark:text-zinc-300 font-medium">
-                                  Room {booking.roomNumber}
-                                </span>
-                              </div>
-                            )}
-                            {booking.guestCount && (
-                              <div className="flex items-center gap-2">
-                                <Users className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
-                                <span className="text-sm text-zinc-700 dark:text-zinc-300 font-medium">
-                                  {booking.guestCount} guest{booking.guestCount !== 1 ? 's' : ''}
-                                </span>
-                              </div>
-                            )}
-                            <div className="flex items-center gap-2">
-                              <CalendarDays className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
-                              <span className="text-sm text-zinc-700 dark:text-zinc-300 font-medium">
-                                {booking.checkInDate} → {booking.checkOutDate}
-                              </span>
-                              <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full font-medium">
-                                {nights} night{nights !== 1 ? 's' : ''}
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Notes with potential time extraction */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                            {booking.guestName || 'Unnamed Guest'}
+                          </span>
+                          {booking.guestCount && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="flex items-center gap-1">
+                                  <Users className="h-4 w-4 text-zinc-500 dark:text-zinc-400 flex-shrink-0" />
+                                  <span className="text-sm text-zinc-600 dark:text-zinc-400">{booking.guestCount}</span>
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Invitations : {booking.guestCount}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
                           {booking.notes && (
-                            <div className="mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-700">
-                              <div className="flex items-start gap-2">
-                                <UtensilsCrossed className="h-4 w-4 text-zinc-500 dark:text-zinc-400 mt-0.5 flex-shrink-0" />
-                                <p className="text-sm text-zinc-700 dark:text-zinc-300">
-                                  {booking.notes}
-                                </p>
-                              </div>
-                            </div>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div>
+                                  <FileText className="h-4 w-4 text-zinc-500 dark:text-zinc-400 flex-shrink-0" />
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{booking.notes}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                          {hasBreakfast && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div>
+                                  <Coffee className="h-4 w-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <div className="space-y-1">
+                                  {bookingBreakfastConfigs.map((config) => {
+                                    // Parse table breakdown to show table-by-table configuration
+                                    let tableBreakdownArray: number[] = []
+                                    if (config.tableBreakdown) {
+                                      if (Array.isArray(config.tableBreakdown)) {
+                                        tableBreakdownArray = config.tableBreakdown
+                                      } else if (typeof config.tableBreakdown === 'string') {
+                                        try {
+                                          const parsed = JSON.parse(config.tableBreakdown)
+                                          if (Array.isArray(parsed)) {
+                                            tableBreakdownArray = parsed
+                                          }
+                                        } catch {
+                                          // Ignore parse errors
+                                        }
+                                      }
+                                    }
+                                    
+                                    const guests = config.totalGuests || 0
+                                    const tableConfig = tableBreakdownArray.length > 0
+                                      ? tableBreakdownArray.map((guestsAtTable, idx) => 
+                                          `Table ${idx + 1} : ${guestsAtTable} invité${guestsAtTable !== 1 ? 's' : ''}`
+                                        ).join(', ')
+                                      : `${guests} invité${guests !== 1 ? 's' : ''}`
+                                    
+                                    return (
+                                      <div key={`${config.id || config.breakfastDate || config.startTime}`}>
+                                        <div className="font-medium">
+                                          {tableConfig}
+                                        </div>
+                                        {config.startTime && (
+                                          <div className="text-xs opacity-90">Heure : {config.startTime}</div>
+                                        )}
+                                        {config.notes && (
+                                          <div className="text-xs opacity-75 mt-1">{config.notes}</div>
+                                        )}
+                                      </div>
+                                    )
+                                  })}
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                          {hasReservations && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div>
+                                  <UtensilsCrossed className="h-4 w-4 text-zinc-500 dark:text-zinc-400 flex-shrink-0" />
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <div className="space-y-2">
+                                  {bookingReservations.map((reservation) => {
+                                    const guestCount = reservation.guestCount || 0
+                                    const timeRange = reservation.startTime && reservation.endTime
+                                      ? `${reservation.startTime} - ${reservation.endTime}`
+                                      : reservation.startTime
+                                      ? reservation.startTime
+                                      : null
+                                    
+                                    return (
+                                      <div key={reservation.id || reservation.dayId}>
+                                        {timeRange && (
+                                          <div className="font-medium">
+                                            {timeRange}
+                                          </div>
+                                        )}
+                                        <div className={timeRange ? "text-xs opacity-90" : "font-medium"}>
+                                          {guestCount} invité{guestCount !== 1 ? 's' : ''}
+                                        </div>
+                                        {reservation.notes && (
+                                          <div className="text-xs opacity-75 mt-1">{reservation.notes}</div>
+                                        )}
+                                      </div>
+                                    )
+                                  })}
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
                           )}
                         </div>
-                        <div className="flex gap-2 ml-4">
-                          <button
-                            type="button"
-                            onClick={() => openEditModal(booking)}
-                            className="p-2 rounded-lg bg-zinc-100 dark:bg-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-600 transition-colors"
-                            title="Edit booking"
-                            aria-label="Edit booking"
-                          >
-                            <svg className="h-4 w-4 text-zinc-600 dark:text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                              <title>Edit</title>
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(booking, 'booking')}
-                            className="p-2 rounded-lg bg-zinc-100 dark:bg-zinc-700 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
-                            title="Delete booking"
-                            aria-label="Delete booking"
-                          >
-                            <svg className="h-4 w-4 text-zinc-600 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                              <title>Delete</title>
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </button>
-                        </div>
+                        <span className="text-sm text-zinc-600 dark:text-zinc-400 block mt-0.5">
+                          {dateRange}
+                        </span>
                       </div>
-
-                      <div className="mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-700">
-                        {bookingBreakfast ? (
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1 space-y-2">
-                              <div className="flex items-center gap-3">
-                                <div className="p-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/30">
-                                  <Coffee className="h-4 w-4 text-amber-700 dark:text-amber-400" />
-                                </div>
-                                <div className="flex items-center gap-3 flex-wrap">
-                                  <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                                    {bookingBreakfast.totalGuests} guest{bookingBreakfast.totalGuests !== 1 ? 's' : ''}
-                                  </span>
-                                  {formatTableBreakdown(bookingBreakfast.tableBreakdown) && (
-                                    <span className="text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20 px-2 py-1 rounded-full font-medium">
-                                      {formatTableBreakdown(bookingBreakfast.tableBreakdown)}
-                                    </span>
-                                  )}
-                                  {bookingBreakfast.startTime && (
-                                    <div className="flex items-center gap-1.5">
-                                      <Clock className="h-3.5 w-3.5 text-zinc-500 dark:text-zinc-400" />
-                                      <span className="text-sm text-zinc-600 dark:text-zinc-400 font-medium">
-                                        {bookingBreakfast.startTime}
-                                      </span>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                              {bookingBreakfast.notes && (
-                                <div className="text-sm text-zinc-600 dark:text-zinc-400 ml-9">
-                                  {bookingBreakfast.notes}
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex gap-2 ml-4">
-                              <button
-                                type="button"
-                                onClick={() => openBreakfastModal(booking, bookingBreakfast)}
-                                className="p-2 rounded-lg bg-zinc-100 dark:bg-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-600 transition-colors"
-                                title="Edit breakfast"
-                                aria-label="Edit breakfast"
-                              >
-                                <svg className="h-4 w-4 text-zinc-600 dark:text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                                  <title>Edit</title>
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                </svg>
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleDelete(bookingBreakfast, 'breakfast')}
-                                className="p-2 rounded-lg bg-zinc-100 dark:bg-zinc-700 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
-                                title="Delete breakfast"
-                                aria-label="Delete breakfast"
-                              >
-                                <svg className="h-4 w-4 text-zinc-600 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                                  <title>Delete</title>
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
-                              <Coffee className="h-4 w-4" />
-                              <span>No breakfast configured</span>
-                            </div>
-                            <Button
-                              onClick={() => openBreakfastModal(booking)}
-                              variant="default"
-                              size="sm"
-                              className="text-sm"
-                            >
-                              Add Breakfast
-                            </Button>
-                          </div>
-                        )}
+                      <div className="flex gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => openEditModal(booking)}
+                          className="group/edit p-2 rounded-lg bg-white dark:bg-zinc-800 shadow-sm border border-zinc-200 dark:border-zinc-700 hover:shadow-md hover:scale-105 transition-all duration-200 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-200 dark:hover:border-blue-800"
+                          title="Modifier la réservation"
+                          aria-label="Modifier la réservation"
+                        >
+                          <Edit className="h-4 w-4 text-zinc-600 dark:text-zinc-400 group-hover/edit:text-blue-600 dark:group-hover/edit:text-blue-400 transition-colors" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(booking, 'booking')}
+                          className="group/delete p-2 rounded-lg bg-white dark:bg-zinc-800 shadow-sm border border-zinc-200 dark:border-zinc-700 hover:shadow-md hover:scale-105 transition-all duration-200 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-200 dark:hover:border-red-800"
+                          title="Supprimer la réservation"
+                          aria-label="Supprimer la réservation"
+                        >
+                          <Trash2 className="h-4 w-4 text-zinc-600 dark:text-zinc-400 group-hover/delete:text-red-600 dark:group-hover/delete:text-red-400 transition-colors" />
+                        </button>
                       </div>
                     </div>
                   )
                 })}
               </div>
             ) : (
-              <div className="text-center py-12 text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl border border-dashed border-zinc-200 dark:border-zinc-700">
-                <Building className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                <p className="text-sm font-medium">No hotel bookings for this date</p>
+              <div className="text-center py-16 text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl border border-dashed border-zinc-200 dark:border-zinc-700">
+                <Building className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                <p className="text-base font-medium">Aucune réservation d'hôtel pour cette date</p>
               </div>
             )}
           </section>
@@ -606,43 +606,33 @@ export function CalendarDaySidebar({
 
         {/* Golf and Events Section */}
         <section>
-          <div className="flex items-center justify-between mb-5">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
-                <LandPlot className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
+                <LandPlot className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
               </div>
               <div>
-                <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
-                  Golf and Events
+                <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+                  Golf et événements
                 </h2>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                  {golfEntries.length + eventEntries.length} item{golfEntries.length + eventEntries.length !== 1 ? 's' : ''}
+                <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                  {golfEntries.length + eventEntries.length} élément{golfEntries.length + eventEntries.length !== 1 ? 's' : ''}
                 </p>
               </div>
             </div>
             {isAuthenticated && (
-              <div className="flex gap-2">
-                <Button
-                  onClick={() => openModal('golf')}
-                  variant="default"
-                  size="sm"
-                  className="text-sm"
-                >
-                  Add Golf
-                </Button>
-                <Button
-                  onClick={() => openModal('event')}
-                  variant="default"
-                  size="sm"
-                  className="text-sm"
-                >
-                  Add Event
-                </Button>
-              </div>
+              <Button
+                onClick={() => openModal('golf')}
+                variant="default"
+                size="default"
+                className="text-base"
+              >
+                Ajouter Golf/Événement
+              </Button>
             )}
           </div>
           {(golfEntries.length > 0 || eventEntries.length > 0) ? (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {golfEntries.map((entry) => (
                 <EntryCard
                   key={entry.id}
@@ -663,12 +653,14 @@ export function CalendarDaySidebar({
               ))}
             </div>
           ) : (
-            <div className="text-center py-12 text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl border border-dashed border-zinc-200 dark:border-zinc-700">
-              <LandPlot className="h-12 w-12 mx-auto mb-3 opacity-50" />
-              <p className="text-sm font-medium">No golf or events scheduled</p>
+            <div className="text-center py-16 text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl border border-dashed border-zinc-200 dark:border-zinc-700">
+              <LandPlot className="h-16 w-16 mx-auto mb-4 opacity-50" />
+              <p className="text-base font-medium">Aucun golf ou événement prévu</p>
             </div>
           )}
-        </section>
+          </section>
+          </div>
+        </div>
       </div>
 
       {/* Add Entry Modal */}
@@ -681,6 +673,44 @@ export function CalendarDaySidebar({
         isSubmitting={isSubmitting}
         error={error}
         editEntry={editingEntry}
+      />
+
+      {/* Hotel Booking Drawer */}
+      <AddHotelBookingDrawer
+        isOpen={hotelBookingDrawerOpen}
+        onClose={closeHotelBookingDrawer}
+        onSubmit={async (formData) => {
+          if (!dateParam) return
+          setIsSubmitting(true)
+          setError(null)
+          try {
+            let result
+            const isEditMode = !!editingBooking
+            if (isEditMode) {
+              result = await updateHotelBooking(formData)
+            } else {
+              result = await createHotelBooking(formData)
+            }
+            if (result?.ok) {
+              closeHotelBookingDrawer()
+              router.refresh()
+              onDataChange?.()
+            } else {
+              setError(result?.error || `Échec de la ${isEditMode ? 'mise à jour' : 'création'} de la réservation d'hôtel`)
+            }
+          } catch (err) {
+            console.error('Hotel booking submission error:', err)
+            setError('Une erreur inattendue s\'est produite')
+          } finally {
+            setIsSubmitting(false)
+          }
+        }}
+        dateParam={dateParam || undefined}
+        isSubmitting={isSubmitting}
+        error={error}
+        editBooking={editingBooking}
+        existingBreakfastConfigs={editingBooking ? breakfastConfigs.filter(c => c.hotelBookingId === editingBooking.id) : []}
+        existingReservations={editingBooking ? reservationEntries.filter(r => r.hotelBookingId === editingBooking.id) : []}
       />
 
       {/* Breakfast Configuration Modal */}
@@ -700,22 +730,22 @@ export function CalendarDaySidebar({
       <AlertDialog open={deleteConfirmOpen} onOpenChange={(open) => !open && cancelDelete()}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirm Delete</AlertDialogTitle>
+            <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
             <AlertDialogDescription className="text-zinc-700 dark:text-zinc-300">
-              Are you sure you want to delete this {
+              Êtes-vous sûr de vouloir supprimer cette {
                 deleteType === 'breakfast'
-                  ? 'breakfast configuration'
+                  ? 'configuration de petit-déjeuner'
                   : deleteType === 'booking'
-                    ? 'hotel booking'
+                    ? 'réservation d\'hôtel'
                     : deleteType === 'golf'
-                      ? 'golf entry'
+                      ? 'entrée de golf'
                       : deleteType === 'event'
-                        ? 'event entry'
+                        ? 'entrée d\'événement'
                         : deleteType === 'reservation'
-                          ? 'reservation entry'
-                          : (entryToDelete?.type || deleteType) + ' entry'
-              }? This action cannot be undone.
-              {deleteType === 'booking' && ' All associated breakfast configurations will also be deleted.'}
+                          ? 'entrée de réservation'
+                          : (entryToDelete?.type || deleteType) + ' entrée'
+              } ? Cette action ne peut pas être annulée.
+              {deleteType === 'booking' && ' Toutes les configurations de petit-déjeuner associées seront également supprimées.'}
             </AlertDialogDescription>
           </AlertDialogHeader>
 
@@ -730,10 +760,10 @@ export function CalendarDaySidebar({
                 />
                 <div className="flex-1">
                   <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                    Delete all {recurringOccurrencesCount} other occurrence{recurringOccurrencesCount !== 1 ? 's' : ''} of this recurring {deleteType === 'event' ? 'event' : 'golf entry'}
+                    Supprimer toutes les {recurringOccurrencesCount} autres occurrences de cette {deleteType === 'event' ? 'événement' : 'entrée de golf'} récurrente
                   </p>
                   <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
-                    If unchecked, only this occurrence will be deleted.
+                    Si non coché, seule cette occurrence sera supprimée.
                   </p>
                 </div>
               </Label>
@@ -741,10 +771,10 @@ export function CalendarDaySidebar({
           )}
           <AlertDialogFooter>
             <Button type="button" variant="ghost" onClick={cancelDelete}>
-              Cancel
+              Annuler
             </Button>
             <Button type="button" variant="destructive" onClick={confirmDelete}>
-              Delete
+              Supprimer
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>

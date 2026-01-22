@@ -42,11 +42,11 @@ export async function enableEditMode(formData: FormData): Promise<ActionResponse
     const expected = process.env.NEXT_PUBLIC_EDIT_CODE || "";
     
     if (!expected) {
-      return { ok: false, error: "Server configuration error" };
+      return { ok: false, error: "Erreur de configuration du serveur" };
     }
     
     if (!code || code !== expected) {
-      return { ok: false, error: "Invalid password" };
+      return { ok: false, error: "Mot de passe invalide" };
     }
     
     const c = await cookies();
@@ -76,7 +76,7 @@ export async function disableEditMode(): Promise<ActionResponse> {
     return { ok: true };
   } catch (error) {
     console.error("Error disabling edit mode:", error);
-    return { ok: false, error: "Failed to sign out" };
+    return { ok: false, error: "Échec de la déconnexion" };
   }
 }
 

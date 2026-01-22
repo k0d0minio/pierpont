@@ -21,7 +21,7 @@ function formatDate(date: Date | undefined) {
     return ""
   }
 
-  return date.toLocaleDateString("en-US", {
+  return date.toLocaleDateString("fr-FR", {
     day: "2-digit",
     month: "long",
     year: "numeric",
@@ -45,12 +45,12 @@ export function DatePickerInput() {
 
   return (
     <Field className="mx-auto w-48">
-      <FieldLabel htmlFor="date-required">Subscription Date</FieldLabel>
+      <FieldLabel htmlFor="date-required">Date d'abonnement</FieldLabel>
       <InputGroup>
         <InputGroupInput
           id="date-required"
           value={value}
-          placeholder="June 01, 2025"
+          placeholder="01 juin 2025"
           onChange={(e) => {
             const date = new Date(e.target.value)
             setValue(e.target.value)
@@ -73,10 +73,10 @@ export function DatePickerInput() {
                 id="date-picker"
                 variant="ghost"
                 size="icon-xs"
-                aria-label="Select date"
+                aria-label="Sélectionner une date"
               >
                 <CalendarIcon />
-                <span className="sr-only">Select date</span>
+                <span className="sr-only">Sélectionner une date</span>
               </InputGroupButton>
             </PopoverTrigger>
             <PopoverContent

@@ -60,7 +60,7 @@ export function addDays(date: Date, n: number): Date {
  * @returns Weekday name string
  */
 export function weekdayNameBrussels(date: Date): string {
-  return new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Brussels', weekday: 'long' }).format(date)
+  return new Intl.DateTimeFormat('fr-FR', { timeZone: 'Europe/Brussels', weekday: 'long' }).format(date)
 }
 
 /**
@@ -140,6 +140,21 @@ export function isDateWithinOneYear(date: Date): boolean {
 export function isPastDate(date: Date): boolean {
   const todayUtc = getTodayBrusselsUtc()
   return date < todayUtc
+}
+
+/**
+ * Normalize a Date object to UTC midnight
+ * This is useful when receiving Date objects from calendar components that may be in local timezone
+ * @param date - Date object (may be in local timezone)
+ * @returns Date object at UTC midnight
+ */
+export function normalizeToUtcMidnight(date: Date): Date {
+  // Get the local date components
+  const year = date.getFullYear()
+  const month = date.getMonth()
+  const day = date.getDate()
+  // Create a new Date at UTC midnight with those components
+  return new Date(Date.UTC(year, month, day, 0, 0, 0, 0))
 }
 
 /**

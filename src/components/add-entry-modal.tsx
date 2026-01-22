@@ -6,7 +6,22 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog'
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerFooter,
+  DrawerDescription,
+} from '@/components/ui/drawer'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from '@/components/ui/dialog'
 import { getTodayBrusselsUtc, formatYmd, addDays } from '@/lib/day-utils'
 import { getAllPOCs, createPOC, getAllVenueTypes, createVenueType } from '@/app/admin/settings/actions'
 import { Tables } from '@/types/supabase'
@@ -18,7 +33,7 @@ type RecurrenceFrequency = Tables<'Entry'>['recurrenceFrequency']
 interface AddEntryModalProps {
   isOpen: boolean;
   onClose: () => void;
-  entryType: EntryType;
+  entryType: EntryType | null;
   onSubmit: (formData: FormData) => void;
   dateParam?: string;
   isSubmitting?: boolean;
@@ -26,11 +41,11 @@ interface AddEntryModalProps {
   editEntry?: EntryWithRelations | null;
 }
 
-export function AddEntryModal({ 
-  isOpen, 
-  onClose, 
-  entryType, 
-  onSubmit, 
+export function AddEntryModal({
+  isOpen,
+  onClose,
+  entryType,
+  onSubmit,
   dateParam,
   isSubmitting = false,
   error = null,
@@ -38,6 +53,19 @@ export function AddEntryModal({
 }: AddEntryModalProps) {
 
   const isEditMode = !!editEntry
+  const [selectedEntryType, setSelectedEntryType] = useState<EntryType | null>(entryType || (editEntry?.type || null))
+
+  // Update selectedEntryType when entryType prop changes
+  useEffect(() => {
+    if (entryType) {
+      setSelectedEntryType(entryType)
+    } else if (editEntry?.type) {
+      setSelectedEntryType(editEntry.type)
+    }
+  }, [entryType, editEntry])
+
+  // Use selectedEntryType for rendering, but allow golf/event to be interchangeable
+  const effectiveEntryType = selectedEntryType || entryType || (editEntry?.type || null)
   const [pocs, setPocs] = useState<Tables<'PointOfContact'>[]>([])
   const [venueTypes, setVenueTypes] = useState<Tables<'VenueType'>[]>([])
   const [isLoadingPOCs, setIsLoadingPOCs] = useState(false)
@@ -65,7 +93,7 @@ export function AddEntryModal({
 
   // Fetch POCs and Venue Types when modal opens
   useEffect(() => {
-    if (isOpen && (entryType === 'golf' || entryType === 'event')) {
+    if (isOpen && (effectiveEntryType === 'golf' || effectiveEntryType === 'event')) {
       setIsLoadingPOCs(true)
       getAllPOCs()
         .then((result) => {
@@ -80,8 +108,8 @@ export function AddEntryModal({
           setIsLoadingPOCs(false)
         })
     }
-    
-    if (isOpen && (entryType === 'golf' || entryType === 'event')) {
+
+    if (isOpen && (effectiveEntryType === 'golf' || effectiveEntryType === 'event')) {
       setIsLoadingVenueTypes(true)
       getAllVenueTypes()
         .then((result) => {
@@ -96,7 +124,7 @@ export function AddEntryModal({
           setIsLoadingVenueTypes(false)
         })
     }
-  }, [isOpen, entryType])
+  }, [isOpen, effectiveEntryType])
 
   // Update selected POC and Venue Type when editEntry changes
   useEffect(() => {
@@ -105,13 +133,13 @@ export function AddEntryModal({
     } else {
       setSelectedPOC('')
     }
-    
+
     if (editEntry?.venueTypeId) {
       setSelectedVenueType(String(editEntry.venueTypeId))
     } else {
       setSelectedVenueType('')
     }
-    
+
     if (editEntry?.isRecurring) {
       setIsRecurring(true)
       setRecurrenceFrequency(editEntry.recurrenceFrequency || 'weekly')
@@ -158,10 +186,10 @@ export function AddEntryModal({
         setIsAddPOCModalOpen(false)
         setPocFormData({ name: '', role: '', phoneNumber: '', email: '' })
       } else {
-        setPocError(result.error || 'Failed to create POC')
+        setPocError(result.error || 'Échec de la création du point de contact')
       }
     } catch (err) {
-      setPocError('An error occurred. Please try again.')
+      setPocError('Une erreur s\'est produite. Veuillez réessayer.')
     } finally {
       setIsAddingPOC(false)
     }
@@ -204,10 +232,10 @@ export function AddEntryModal({
         setIsAddVenueTypeModalOpen(false)
         setVenueTypeFormData({ name: '', code: '' })
       } else {
-        setVenueTypeError(result.error || 'Failed to create venue type')
+        setVenueTypeError(result.error || 'Échec de la création du type de lieu')
       }
     } catch (err) {
-      setVenueTypeError('An error occurred. Please try again.')
+      setVenueTypeError('Une erreur s\'est produite. Veuillez réessayer.')
     } finally {
       setIsAddingVenueType(false)
     }
@@ -225,6 +253,11 @@ export function AddEntryModal({
     if (isEditMode && editEntry) {
       formData.append('id', String(editEntry.id))
     }
+    // Use selectedEntryType for submission (or effectiveEntryType as fallback)
+    const typeToSubmit = selectedEntryType || effectiveEntryType
+    if (typeToSubmit) {
+      formData.append('type', typeToSubmit)
+    }
     // Add recurring fields
     if (isRecurring) {
       formData.append('isRecurring', 'true')
@@ -237,133 +270,43 @@ export function AddEntryModal({
   }
 
   const renderTypeSpecificFields = (): JSX.Element | null => {
-    switch (entryType) {
+    if (!effectiveEntryType) {
+      return null
+    }
+
+    switch (effectiveEntryType) {
       case "breakfast":
         return (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="guestName" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  Guest Name *
-                </Label>
-                <Input 
-                  id="guestName"
-                  name="guestName" 
-                  type="text" 
-                  placeholder="e.g., John Smith"
-                  defaultValue={editEntry?.guestName || ''}
-                  required
-                  className="w-full"
-                />
-              </div>
-              <div>
-                <Label htmlFor="roomNumber" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  Room Number
-                </Label>
-                <Input 
-                  id="roomNumber"
-                  name="roomNumber" 
-                  type="text" 
-                  placeholder="e.g., 101"
-                  defaultValue={editEntry?.roomNumber || ''}
-                  className="w-full"
-                />
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="guestName" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                Nom de l'invité *
+              </Label>
+              <Input
+                id="guestName"
+                name="guestName"
+                type="text"
+                placeholder="ex. Jean Dupont"
+                defaultValue={editEntry?.guestName || ''}
+                required
+                className="w-full"
+              />
             </div>
             <div>
               <Label htmlFor="guestCount" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                Guest Count
+                Nombre d'invités
               </Label>
-              <Input 
+              <Input
                 id="guestCount"
-                name="guestCount" 
-                type="number" 
-                placeholder="e.g., 2"
+                name="guestCount"
+                type="number"
+                placeholder="ex. 2"
                 defaultValue={editEntry?.guestCount || ''}
                 className="w-full"
               />
             </div>
-          </>
-        );
+          </div>
 
-      case "hotel":
-        return (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="guestName" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  Guest Name *
-                </Label>
-                <Input 
-                  id="guestName"
-                  name="guestName" 
-                  type="text" 
-                  placeholder="e.g., John Smith"
-                  defaultValue={editEntry?.guestName || ''}
-                  required
-                  className="w-full"
-                />
-              </div>
-              <div>
-                <Label htmlFor="roomNumber" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  Room Number
-                </Label>
-                <Input 
-                  id="roomNumber"
-                  name="roomNumber" 
-                  type="text" 
-                  placeholder="e.g., 101"
-                  defaultValue={editEntry?.roomNumber || ''}
-                  className="w-full"
-                />
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="guestCount" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                Guest Count
-              </Label>
-              <Input 
-                id="guestCount"
-                name="guestCount" 
-                type="number" 
-                placeholder="e.g., 2"
-                defaultValue={editEntry?.guestCount || ''}
-                className="w-full"
-              />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="checkInDate" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  Check-in Date *
-                </Label>
-                <Input 
-                  id="checkInDate"
-                  name="checkInDate" 
-                  type="date" 
-                  defaultValue={editEntry?.checkInDate || dateParam || ''}
-                  min={minDate}
-                  max={maxDate}
-                  required
-                  className="w-full"
-                />
-              </div>
-              <div>
-                <Label htmlFor="checkOutDate" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  Check-out Date *
-                </Label>
-                <Input 
-                  id="checkOutDate"
-                  name="checkOutDate" 
-                  type="date" 
-                  defaultValue={editEntry?.checkOutDate || ''}
-                  min={minDate}
-                  max={maxDate}
-                  required
-                  className="w-full"
-                />
-              </div>
-            </div>
-          </>
         );
 
       case "golf":
@@ -371,13 +314,13 @@ export function AddEntryModal({
           <>
             <div>
               <Label htmlFor="title" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                Title *
+                Titre *
               </Label>
-              <Input 
+              <Input
                 id="title"
-                name="title" 
-                type="text" 
-                placeholder="e.g., Golf Tournament"
+                name="title"
+                type="text"
+                placeholder="ex. Tournoi de golf"
                 defaultValue={editEntry?.title || ''}
                 required
                 className="w-full"
@@ -387,11 +330,11 @@ export function AddEntryModal({
               <Label htmlFor="description" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
                 Description
               </Label>
-              <Textarea 
+              <Textarea
                 id="description"
-                name="description" 
+                name="description"
                 rows={3}
-                placeholder="Describe the golf event..."
+                placeholder="Décrivez l'événement de golf..."
                 defaultValue={editEntry?.description || ''}
                 className="w-full"
               />
@@ -399,26 +342,26 @@ export function AddEntryModal({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="size" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  Confirmed Participants
+                  Participants confirmés
                 </Label>
-                <Input 
+                <Input
                   id="size"
-                  name="size" 
-                  type="number" 
-                  placeholder="e.g., 54"
+                  name="size"
+                  type="number"
+                  placeholder="ex. 54"
                   defaultValue={editEntry?.guestCount || ''}
                   className="w-full"
                 />
               </div>
               <div>
                 <Label htmlFor="capacity" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  Max Capacity
+                  Capacité maximale
                 </Label>
-                <Input 
+                <Input
                   id="capacity"
-                  name="capacity" 
-                  type="number" 
-                  placeholder="e.g., 70"
+                  name="capacity"
+                  type="number"
+                  placeholder="ex. 70"
                   defaultValue={editEntry?.capacity || ''}
                   className="w-full"
                 />
@@ -427,15 +370,15 @@ export function AddEntryModal({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="poc" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  POC (Point of Contact)
+                  Point de contact (POC)
                 </Label>
-                <Select 
+                <Select
                   value={selectedPOC || undefined}
                   onValueChange={handlePOCChange}
                   disabled={isLoadingPOCs}
                 >
                   <SelectTrigger id="poc" className="w-full">
-                    <SelectValue placeholder="Select POC..." />
+                    <SelectValue placeholder="Sélectionner un point de contact..." />
                   </SelectTrigger>
                   <SelectContent>
                     {pocs.map((poc) => (
@@ -444,7 +387,7 @@ export function AddEntryModal({
                       </SelectItem>
                     ))}
                     <SelectItem value="add-new" className="font-medium text-emerald-600">
-                      + Add New POC
+                      + Ajouter un nouveau point de contact
                     </SelectItem>
                   </SelectContent>
                 </Select>
@@ -452,15 +395,15 @@ export function AddEntryModal({
               </div>
               <div>
                 <Label htmlFor="venueType" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  Venue Type
+                  Type de lieu
                 </Label>
-                <Select 
+                <Select
                   value={selectedVenueType || undefined}
                   onValueChange={handleVenueTypeChange}
                   disabled={isLoadingVenueTypes}
                 >
                   <SelectTrigger id="venueType" className="w-full">
-                    <SelectValue placeholder="Select venue type..." />
+                    <SelectValue placeholder="Sélectionner un type de lieu..." />
                   </SelectTrigger>
                   <SelectContent>
                     {venueTypes.map((venueType) => (
@@ -469,7 +412,7 @@ export function AddEntryModal({
                       </SelectItem>
                     ))}
                     <SelectItem value="add-new" className="font-medium text-emerald-600">
-                      + Add New Venue Type
+                      + Ajouter un nouveau type de lieu
                     </SelectItem>
                   </SelectContent>
                 </Select>
@@ -486,15 +429,15 @@ export function AddEntryModal({
                   className="mr-2 h-4 w-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500"
                 />
                 <Label htmlFor="isRecurring-golf" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                  This is a recurring entry
+                  Il s'agit d'une entrée récurrente
                 </Label>
               </div>
               {isRecurring && (
                 <div>
                   <Label htmlFor="recurrenceFrequency-golf" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                    Recurrence Frequency
+                    Fréquence de récurrence
                   </Label>
-                  <Select 
+                  <Select
                     value={recurrenceFrequency}
                     onValueChange={(value) => setRecurrenceFrequency(value as RecurrenceFrequency)}
                   >
@@ -502,10 +445,10 @@ export function AddEntryModal({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="weekly">Weekly</SelectItem>
-                      <SelectItem value="biweekly">Biweekly (Every 2 weeks)</SelectItem>
-                      <SelectItem value="monthly">Monthly</SelectItem>
-                      <SelectItem value="yearly">Yearly</SelectItem>
+                      <SelectItem value="weekly">Hebdomadaire</SelectItem>
+                      <SelectItem value="biweekly">Bihebdomadaire (Toutes les 2 semaines)</SelectItem>
+                      <SelectItem value="monthly">Mensuel</SelectItem>
+                      <SelectItem value="yearly">Annuel</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -519,13 +462,13 @@ export function AddEntryModal({
           <>
             <div>
               <Label htmlFor="title" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                Title *
+                Titre *
               </Label>
-              <Input 
+              <Input
                 id="title"
-                name="title" 
-                type="text" 
-                placeholder="e.g., Corporate Event"
+                name="title"
+                type="text"
+                placeholder="ex. Événement d'entreprise"
                 defaultValue={editEntry?.title || ''}
                 required
                 className="w-full"
@@ -535,11 +478,11 @@ export function AddEntryModal({
               <Label htmlFor="description" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
                 Description
               </Label>
-              <Textarea 
+              <Textarea
                 id="description"
-                name="description" 
+                name="description"
                 rows={3}
-                placeholder="Describe the event..."
+                placeholder="Décrivez l'événement..."
                 defaultValue={editEntry?.description || ''}
                 className="w-full"
               />
@@ -547,26 +490,26 @@ export function AddEntryModal({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="size" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  Confirmed Participants
+                  Participants confirmés
                 </Label>
-                <Input 
+                <Input
                   id="size"
-                  name="size" 
-                  type="number" 
-                  placeholder="e.g., 54"
+                  name="size"
+                  type="number"
+                  placeholder="ex. 54"
                   defaultValue={editEntry?.guestCount || ''}
                   className="w-full"
                 />
               </div>
               <div>
                 <Label htmlFor="capacity" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  Max Capacity
+                  Capacité maximale
                 </Label>
-                <Input 
+                <Input
                   id="capacity"
-                  name="capacity" 
-                  type="number" 
-                  placeholder="e.g., 70"
+                  name="capacity"
+                  type="number"
+                  placeholder="ex. 70"
                   defaultValue={editEntry?.capacity || ''}
                   className="w-full"
                 />
@@ -575,15 +518,15 @@ export function AddEntryModal({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="poc" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  POC (Point of Contact)
+                  Point de contact (POC)
                 </Label>
-                <Select 
+                <Select
                   value={selectedPOC || undefined}
                   onValueChange={handlePOCChange}
                   disabled={isLoadingPOCs}
                 >
                   <SelectTrigger id="poc" className="w-full">
-                    <SelectValue placeholder="Select POC..." />
+                    <SelectValue placeholder="Sélectionner un point de contact..." />
                   </SelectTrigger>
                   <SelectContent>
                     {pocs.map((poc) => (
@@ -592,7 +535,7 @@ export function AddEntryModal({
                       </SelectItem>
                     ))}
                     <SelectItem value="add-new" className="font-medium text-emerald-600">
-                      + Add New POC
+                      + Ajouter un nouveau point de contact
                     </SelectItem>
                   </SelectContent>
                 </Select>
@@ -600,15 +543,15 @@ export function AddEntryModal({
               </div>
               <div>
                 <Label htmlFor="venueType" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  Venue Type
+                  Type de lieu
                 </Label>
-                <Select 
+                <Select
                   value={selectedVenueType || undefined}
                   onValueChange={handleVenueTypeChange}
                   disabled={isLoadingVenueTypes}
                 >
                   <SelectTrigger id="venueType" className="w-full">
-                    <SelectValue placeholder="Select venue type..." />
+                    <SelectValue placeholder="Sélectionner un type de lieu..." />
                   </SelectTrigger>
                   <SelectContent>
                     {venueTypes.map((venueType) => (
@@ -617,7 +560,7 @@ export function AddEntryModal({
                       </SelectItem>
                     ))}
                     <SelectItem value="add-new" className="font-medium text-emerald-600">
-                      + Add New Venue Type
+                      + Ajouter un nouveau type de lieu
                     </SelectItem>
                   </SelectContent>
                 </Select>
@@ -634,15 +577,15 @@ export function AddEntryModal({
                   className="mr-2 h-4 w-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500"
                 />
                 <Label htmlFor="isRecurring-event" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                  This is a recurring entry
+                  Il s'agit d'une entrée récurrente
                 </Label>
               </div>
               {isRecurring && (
                 <div>
                   <Label htmlFor="recurrenceFrequency-event" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                    Recurrence Frequency
+                    Fréquence de récurrence
                   </Label>
-                  <Select 
+                  <Select
                     value={recurrenceFrequency}
                     onValueChange={(value) => setRecurrenceFrequency(value as RecurrenceFrequency)}
                   >
@@ -650,10 +593,10 @@ export function AddEntryModal({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="weekly">Weekly</SelectItem>
-                      <SelectItem value="biweekly">Biweekly (Every 2 weeks)</SelectItem>
-                      <SelectItem value="monthly">Monthly</SelectItem>
-                      <SelectItem value="yearly">Yearly</SelectItem>
+                      <SelectItem value="weekly">Hebdomadaire</SelectItem>
+                      <SelectItem value="biweekly">Bihebdomadaire (Toutes les 2 semaines)</SelectItem>
+                      <SelectItem value="monthly">Mensuel</SelectItem>
+                      <SelectItem value="yearly">Annuel</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -668,13 +611,13 @@ export function AddEntryModal({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="guestName" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  Guest Name *
+                  Nom de l'invité *
                 </Label>
-                <Input 
+                <Input
                   id="guestName"
-                  name="guestName" 
-                  type="text" 
-                  placeholder="e.g., John Smith"
+                  name="guestName"
+                  type="text"
+                  placeholder="ex. Jean Dupont"
                   defaultValue={editEntry?.guestName || ''}
                   required
                   className="w-full"
@@ -682,13 +625,13 @@ export function AddEntryModal({
               </div>
               <div>
                 <Label htmlFor="phoneNumber" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  Phone Number
+                  Numéro de téléphone
                 </Label>
-                <Input 
+                <Input
                   id="phoneNumber"
-                  name="phoneNumber" 
-                  type="tel" 
-                  placeholder="e.g., +32 123 456 789"
+                  name="phoneNumber"
+                  type="tel"
+                  placeholder="ex. +32 123 456 789"
                   defaultValue={editEntry?.phoneNumber || ''}
                   className="w-full"
                 />
@@ -699,24 +642,24 @@ export function AddEntryModal({
                 <Label htmlFor="email" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
                   Email
                 </Label>
-                <Input 
+                <Input
                   id="email"
-                  name="email" 
-                  type="email" 
-                  placeholder="e.g., john@example.com"
+                  name="email"
+                  type="email"
+                  placeholder="ex. jean@exemple.com"
                   defaultValue={editEntry?.email || ''}
                   className="w-full"
                 />
               </div>
               <div>
                 <Label htmlFor="guestCount" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  Guest Count
+                  Nombre d'invités
                 </Label>
-                <Input 
+                <Input
                   id="guestCount"
-                  name="guestCount" 
-                  type="number" 
-                  placeholder="e.g., 4"
+                  name="guestCount"
+                  type="number"
+                  placeholder="ex. 4"
                   defaultValue={editEntry?.guestCount || ''}
                   className="w-full"
                 />
@@ -732,161 +675,194 @@ export function AddEntryModal({
 
   const getTitle = (): string => {
     if (isEditMode) {
-      switch (entryType) {
-        case "breakfast": return "Edit Breakfast Group"
-        case "hotel": return "Edit Hotel Booking"
-        case "golf": return "Edit Golf Entry"
-        case "event": return "Edit Event"
-        case "reservation": return "Edit Reservation"
-        default: return "Edit Entry"
+      switch (effectiveEntryType) {
+        case "breakfast": return "Modifier le groupe de petit-déjeuner"
+        case "golf": return "Modifier l'entrée de golf"
+        case "event": return "Modifier l'événement"
+        case "reservation": return "Modifier la réservation"
+        default: return "Modifier l'entrée"
       }
     } else {
-      switch (entryType) {
-        case "breakfast": return "Add Breakfast Group"
-        case "hotel": return "Add Hotel Booking"
-        case "golf": return "Add Golf Entry"
-        case "event": return "Add Event"
-        case "reservation": return "Add Reservation"
-        default: return "Add Entry"
+      if (effectiveEntryType === 'golf' || effectiveEntryType === 'event') {
+        return "Ajouter Golf/Événement"
+      }
+      switch (effectiveEntryType) {
+        case "breakfast": return "Ajouter un groupe de petit-déjeuner"
+        case "reservation": return "Ajouter une réservation"
+        default: return "Ajouter une entrée"
       }
     }
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{getTitle()}</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <input type="hidden" name="date" value={dateParam || ''} />
-          <input type="hidden" name="type" value={entryType || ''} />
-          
-          <div className="space-y-4">
-            {renderTypeSpecificFields()}
-            
-            {/* Time fields - show for all types */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="startTime" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  Start Time
-                </Label>
-                <Input 
-                  id="startTime"
-                  name="startTime" 
-                  type="time" 
-                  defaultValue={editEntry?.startTime || ''}
-                  className="w-full"
-                />
-              </div>
-              <div>
-                <Label htmlFor="endTime" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  End Time
-                </Label>
-                <Input 
-                  id="endTime"
-                  name="endTime" 
-                  type="time" 
-                  defaultValue={editEntry?.endTime || ''}
-                  className="w-full"
-                />
-              </div>
-            </div>
+    <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DrawerContent className="max-h-[90vh] flex flex-col">
+        <DrawerHeader>
+          <DrawerTitle>{getTitle()}</DrawerTitle>
+          <DrawerDescription>
+            {effectiveEntryType === 'golf' ? 'Ajouter ou modifier les détails de l\'entrée de golf' :
+              effectiveEntryType === 'event' ? 'Ajouter ou modifier les détails de l\'événement' :
+                'Ajouter ou modifier les détails de l\'entrée'}
+          </DrawerDescription>
+        </DrawerHeader>
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+          <div className="flex-1 overflow-y-auto px-4 pb-4">
+            <div className="max-w-6xl mx-auto">
+              <div className="space-y-4">
+                <input type="hidden" name="date" value={dateParam || ''} />
 
-            {/* Notes */}
-            <div>
-              <Label htmlFor="notes" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                Notes
-              </Label>
-              <Textarea 
-                id="notes"
-                name="notes" 
-                rows={3}
-                placeholder="Additional notes or details..."
-                defaultValue={editEntry?.notes || ''}
-                className="w-full"
-              />
-            </div>
+                {/* Entry Type Selector - only show for golf/event when not in edit mode */}
+                {!isEditMode && (effectiveEntryType === 'golf' || effectiveEntryType === 'event' || !effectiveEntryType) && (
+                  <div>
+                    <Label htmlFor="entryType" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                      Type d'entrée *
+                    </Label>
+                    <Select
+                      value={selectedEntryType || ''}
+                      onValueChange={(value) => setSelectedEntryType(value as EntryType)}
+                      required
+                    >
+                      <SelectTrigger id="entryType" className="w-full">
+                        <SelectValue placeholder="Sélectionner le type d'entrée..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="golf">Golf</SelectItem>
+                        <SelectItem value="event">Événement</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
-            {/* Tour Operator Flag */}
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="isTourOperator"
-                name="isTourOperator" 
-                defaultChecked={editEntry?.isTourOperator || false}
-                className="mr-2 h-4 w-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500"
-              />
-              <Label htmlFor="isTourOperator" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                Mark as Tour Operator
-              </Label>
+                {renderTypeSpecificFields()}
+
+                {/* Time fields - show for all types when entry type is selected */}
+                {effectiveEntryType && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="startTime" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                        Heure de début
+                      </Label>
+                      <Input
+                        id="startTime"
+                        name="startTime"
+                        type="time"
+                        defaultValue={editEntry?.startTime || ''}
+                        className="w-full"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="endTime" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                        Heure de fin
+                      </Label>
+                      <Input
+                        id="endTime"
+                        name="endTime"
+                        type="time"
+                        defaultValue={editEntry?.endTime || ''}
+                        className="w-full"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Notes */}
+                {effectiveEntryType && (
+                  <div>
+                    <Label htmlFor="notes" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+                      Notes
+                    </Label>
+                    <Textarea
+                      id="notes"
+                      name="notes"
+                      rows={3}
+                      placeholder="Notes ou détails supplémentaires..."
+                      defaultValue={editEntry?.notes || ''}
+                      className="w-full"
+                    />
+                  </div>
+                )}
+
+                {/* Tour Operator Flag */}
+                {effectiveEntryType && (
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id="isTourOperator"
+                      name="isTourOperator"
+                      defaultChecked={editEntry?.isTourOperator || false}
+                      className="mr-2 h-4 w-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500"
+                    />
+                    <Label htmlFor="isTourOperator" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                      Marquer comme opérateur touristique
+                    </Label>
+                  </div>
+                )}
+
+                {error && (
+                  <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-md p-3">
+                    {error}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-          
-          {error && (
-            <div className="mt-4">
-              <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-md p-3">
-                {error}
-              </div>
-            </div>
-          )}
-          
-          <DialogFooter>
+
+          <DrawerFooter className="flex-row gap-2 justify-end">
             <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
-              Cancel
+              Annuler
             </Button>
-            <Button type="submit" variant="default" disabled={isSubmitting}>
-              {isSubmitting ? (isEditMode ? 'Updating...' : 'Adding...') : (isEditMode ? 'Update Entry' : 'Add Entry')}
+            <Button type="submit" variant="default" disabled={isSubmitting || !effectiveEntryType}>
+              {isSubmitting ? (isEditMode ? 'Mise à jour...' : 'Ajout...') : (isEditMode ? 'Mettre à jour l\'entrée' : 'Ajouter l\'entrée')}
             </Button>
-          </DialogFooter>
+          </DrawerFooter>
         </form>
-      </DialogContent>
+      </DrawerContent>
 
       {/* Add POC Modal */}
       <Dialog open={isAddPOCModalOpen} onOpenChange={(open) => !open && !isAddingPOC && setIsAddPOCModalOpen(false)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add New Point of Contact</DialogTitle>
+            <DialogTitle>Ajouter un nouveau point de contact</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleAddPOCSubmit}>
             <div className="space-y-4">
               <div>
                 <Label htmlFor="poc-name" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  Name *
+                  Nom *
                 </Label>
                 <Input
                   id="poc-name"
                   type="text"
                   value={pocFormData.name}
                   onChange={(e: ChangeEvent<HTMLInputElement>) => setPocFormData({ ...pocFormData, name: e.target.value })}
-                  placeholder="e.g., John Smith"
+                  placeholder="ex. Jean Dupont"
                   required
                   className="w-full"
                 />
               </div>
               <div>
                 <Label htmlFor="poc-role" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  Role
+                  Rôle
                 </Label>
                 <Input
                   id="poc-role"
                   type="text"
                   value={pocFormData.role}
                   onChange={(e: ChangeEvent<HTMLInputElement>) => setPocFormData({ ...pocFormData, role: e.target.value })}
-                  placeholder="e.g., Event Coordinator"
+                  placeholder="ex. Coordinateur d'événements"
                   className="w-full"
                 />
               </div>
               <div>
                 <Label htmlFor="poc-phone" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  Phone Number
+                  Numéro de téléphone
                 </Label>
                 <Input
                   id="poc-phone"
                   type="tel"
                   value={pocFormData.phoneNumber}
                   onChange={(e: ChangeEvent<HTMLInputElement>) => setPocFormData({ ...pocFormData, phoneNumber: e.target.value })}
-                  placeholder="e.g., +32 123 456 789"
+                  placeholder="ex. +32 123 456 789"
                   className="w-full"
                 />
               </div>
@@ -899,7 +875,7 @@ export function AddEntryModal({
                   type="email"
                   value={pocFormData.email}
                   onChange={(e: ChangeEvent<HTMLInputElement>) => setPocFormData({ ...pocFormData, email: e.target.value })}
-                  placeholder="e.g., john@example.com"
+                  placeholder="ex. jean@exemple.com"
                   className="w-full"
                 />
               </div>
@@ -918,10 +894,10 @@ export function AddEntryModal({
                 onClick={() => setIsAddPOCModalOpen(false)}
                 disabled={isAddingPOC}
               >
-                Cancel
+                Annuler
               </Button>
               <Button type="submit" variant="default" disabled={isAddingPOC}>
-                {isAddingPOC ? 'Adding...' : 'Add POC'}
+                {isAddingPOC ? 'Ajout...' : 'Ajouter le point de contact'}
               </Button>
             </DialogFooter>
           </form>
@@ -932,13 +908,13 @@ export function AddEntryModal({
       <Dialog open={isAddVenueTypeModalOpen} onOpenChange={(open) => !open && !isAddingVenueType && setIsAddVenueTypeModalOpen(false)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add New Venue Type</DialogTitle>
+            <DialogTitle>Ajouter un nouveau type de lieu</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleAddVenueTypeSubmit}>
             <div className="space-y-4">
               <div>
                 <Label htmlFor="venue-type-name" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  Name *
+                  Nom *
                 </Label>
                 <Input
                   id="venue-type-name"
@@ -946,13 +922,13 @@ export function AddEntryModal({
                   value={venueTypeFormData.name}
                   onChange={(e: ChangeEvent<HTMLInputElement>) => {
                     const name = e.target.value;
-                    setVenueTypeFormData({ 
-                      ...venueTypeFormData, 
+                    setVenueTypeFormData({
+                      ...venueTypeFormData,
                       name,
                       code: venueTypeFormData.code || name.toLowerCase().replace(/\s+/g, '-')
                     });
                   }}
-                  placeholder="e.g., Events Hall"
+                  placeholder="ex. Salle des événements"
                   required
                   className="w-full"
                 />
@@ -966,11 +942,11 @@ export function AddEntryModal({
                   type="text"
                   value={venueTypeFormData.code}
                   onChange={(e: ChangeEvent<HTMLInputElement>) => setVenueTypeFormData({ ...venueTypeFormData, code: e.target.value.toLowerCase().replace(/\s+/g, '-') })}
-                  placeholder="e.g., events-hall (auto-generated from name)"
+                  placeholder="ex. salle-evenements (généré automatiquement à partir du nom)"
                   className="w-full"
                 />
                 <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-                  Code is auto-generated from name if not provided.
+                  Le code est généré automatiquement à partir du nom s'il n'est pas fourni.
                 </p>
               </div>
             </div>
@@ -988,15 +964,15 @@ export function AddEntryModal({
                 onClick={() => setIsAddVenueTypeModalOpen(false)}
                 disabled={isAddingVenueType}
               >
-                Cancel
+                Annuler
               </Button>
               <Button type="submit" variant="default" disabled={isAddingVenueType}>
-                {isAddingVenueType ? 'Adding...' : 'Add Venue Type'}
+                {isAddingVenueType ? 'Ajout...' : 'Ajouter le type de lieu'}
               </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
-    </Dialog>
+    </Drawer>
   )
 }

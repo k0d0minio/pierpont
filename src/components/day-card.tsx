@@ -7,14 +7,14 @@ import type { EntryWithRelations } from '../src/types/components'
 
 // Helper functions for date formatting
 function weekdayNameBrussels(date: Date): string {
-  return new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Brussels", weekday: "long" }).format(date);
+  return new Intl.DateTimeFormat("fr-FR", { timeZone: "Europe/Brussels", weekday: "long" }).format(date);
 }
 
 function formatDayDisplay(date: Date): string {
   const weekday = weekdayNameBrussels(date);
-  const dayNum = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Brussels", day: "numeric" }).format(date);
-  const monthName = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Brussels", month: "long" }).format(date);
-  const yearNum = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Brussels", year: "numeric" }).format(date);
+  const dayNum = new Intl.DateTimeFormat("fr-FR", { timeZone: "Europe/Brussels", day: "numeric" }).format(date);
+  const monthName = new Intl.DateTimeFormat("fr-FR", { timeZone: "Europe/Brussels", month: "long" }).format(date);
+  const yearNum = new Intl.DateTimeFormat("fr-FR", { timeZone: "Europe/Brussels", year: "numeric" }).format(date);
   return `${weekday} ${dayNum} ${monthName} ${yearNum}`;
 }
 
@@ -84,7 +84,7 @@ export function DayCard({ day, entries, hotelBookings = [], breakfastConfigs = [
             </h3>
             <div className="flex items-center gap-2">
               {golfTitle && <Badge className="text-xs bg-emerald-500/15 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">Golf</Badge>}
-              {eventTitle && <Badge className="text-xs bg-sky-500/15 text-sky-700 dark:bg-sky-500/10 dark:text-sky-300">Events</Badge>}
+              {eventTitle && <Badge className="text-xs bg-sky-500/15 text-sky-700 dark:bg-sky-500/10 dark:text-sky-300">Événements</Badge>}
             </div>
           </div>
         </div>
@@ -92,7 +92,7 @@ export function DayCard({ day, entries, hotelBookings = [], breakfastConfigs = [
         {/* Summary Metrics */}
         <div className="space-y-2 mb-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-zinc-600 dark:text-zinc-400">Breakfast</span>
+            <span className="text-xs text-zinc-600 dark:text-zinc-400">Petit-déjeuner</span>
             <span className="text-xs font-medium text-zinc-900 dark:text-zinc-100">
               {totalBreakfastGuests > 0 ? (
                 <>
@@ -106,7 +106,7 @@ export function DayCard({ day, entries, hotelBookings = [], breakfastConfigs = [
           </div>
           
           <div className="flex items-center justify-between">
-            <span className="text-xs text-zinc-600 dark:text-zinc-400">Hotel Guests</span>
+            <span className="text-xs text-zinc-600 dark:text-zinc-400">Invités d'hôtel</span>
             <span className="text-xs font-medium text-zinc-900 dark:text-zinc-100">
               {totalHotelGuests > 0 ? totalHotelGuests : "—"}
             </span>

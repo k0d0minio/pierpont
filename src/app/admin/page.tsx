@@ -35,12 +35,12 @@ export default function AdminLogin() {
         router.push('/')
         router.refresh() // Refresh to ensure server state is updated
       } else {
-        setError(result.error || 'Invalid password')
+        setError(result.error || 'Mot de passe invalide')
         setIsLoading(false)
       }
     } catch (err) {
       console.error('Login error:', err)
-      setError('An error occurred during sign in. Please try again.')
+      setError('Une erreur s\'est produite lors de la connexion. Veuillez réessayer.')
       setIsLoading(false)
     }
   }
@@ -51,7 +51,7 @@ export default function AdminLogin() {
       <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-900 p-4">
         <div className="text-center">
           <Logo size="lg" className="justify-center mb-4" />
-          <p className="text-zinc-600 dark:text-zinc-400">Loading...</p>
+          <p className="text-zinc-600 dark:text-zinc-400">Chargement...</p>
         </div>
       </div>
     )
@@ -63,24 +63,24 @@ export default function AdminLogin() {
         <div className="text-center">
           <Logo size="lg" className="justify-center mb-4" />
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
-            Admin Access
+            Accès administrateur
           </h1>
           <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-            Enter the admin password to access editing features
+            Entrez le mot de passe administrateur pour accéder aux fonctionnalités d'édition
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label htmlFor={passwordId} className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-              Password
+              Mot de passe
             </label>
             <Input
               id={passwordId}
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter admin password"
+              placeholder="Entrez le mot de passe administrateur"
               required
               className="w-full"
             />
@@ -97,7 +97,7 @@ export default function AdminLogin() {
             disabled={isLoading}
             className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
           >
-            {isLoading ? 'Signing In...' : 'Sign In'}
+            {isLoading ? 'Connexion...' : 'Se connecter'}
           </Button>
         </form>
 
@@ -107,7 +107,7 @@ export default function AdminLogin() {
             onClick={() => router.push('/')}
             className="text-sm text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
           >
-            ← Back to Week View
+            ← Retour à la vue hebdomadaire
           </Button>
         </div>
       </div>

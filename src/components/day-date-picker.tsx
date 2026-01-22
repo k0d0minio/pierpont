@@ -23,7 +23,7 @@ type DayDatePickerProps = {
 }
 
 function formatDateForDisplay(date: Date): string {
-  return new Intl.DateTimeFormat("en-GB", {
+  return new Intl.DateTimeFormat("fr-FR", {
     timeZone: "Europe/Brussels",
     day: "2-digit",
     month: "long",
@@ -113,7 +113,7 @@ export function DayDatePicker({ dateParam }: DayDatePickerProps) {
       <InputGroup className="w-64">
         <InputGroupInput
           value={value}
-          placeholder="Select date"
+          placeholder="Sélectionner une date"
           onChange={handleInputChange}
           onKeyDown={(e) => {
             if (e.key === "ArrowDown") {
@@ -128,10 +128,10 @@ export function DayDatePicker({ dateParam }: DayDatePickerProps) {
               <InputGroupButton
                 variant="ghost"
                 size="icon-xs"
-                aria-label="Select date"
+                aria-label="Sélectionner une date"
               >
                 <CalendarIcon />
-                <span className="sr-only">Select date</span>
+                <span className="sr-only">Sélectionner une date</span>
               </InputGroupButton>
             </PopoverTrigger>
             <PopoverContent

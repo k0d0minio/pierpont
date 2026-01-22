@@ -9,10 +9,10 @@ import { parseYmd, isPastDate, getTodayBrusselsUtc, formatYmd, isDateWithinOneYe
 import { redirect } from "next/navigation";
 
 function formatDayDisplay(date: Date): string {
-  const weekday = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Brussels", weekday: "long" }).format(date);
-  const dayNum = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Brussels", day: "numeric" }).format(date);
-  const monthName = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Brussels", month: "long" }).format(date);
-  const yearNum = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Brussels", year: "numeric" }).format(date);
+  const weekday = new Intl.DateTimeFormat("fr-FR", { timeZone: "Europe/Brussels", weekday: "long" }).format(date);
+  const dayNum = new Intl.DateTimeFormat("fr-FR", { timeZone: "Europe/Brussels", day: "numeric" }).format(date);
+  const monthName = new Intl.DateTimeFormat("fr-FR", { timeZone: "Europe/Brussels", month: "long" }).format(date);
+  const yearNum = new Intl.DateTimeFormat("fr-FR", { timeZone: "Europe/Brussels", year: "numeric" }).format(date);
   return `${weekday} ${dayNum} ${monthName} ${yearNum}`;
 }
 
@@ -47,12 +47,12 @@ export default async function DayPage({ params }: DayPageProps) {
   await ensureDayExists(date.toISOString());
 
   // Query hotel bookings that overlap with this date
-  // A booking overlaps if: checkInDate <= date < checkOutDate
+  // A booking overlaps if: checkInDate <= date <= checkOutDate
   const { data: hotelBookings } = await supabase
     .from('HotelBooking')
     .select('*, breakfastConfigurations:BreakfastConfiguration(*)')
     .lte('checkInDate', dateParam)
-    .gt('checkOutDate', dateParam)
+    .gte('checkOutDate', dateParam)
     .order('checkInDate', { ascending: true });
 
   // Query breakfast configurations for this day

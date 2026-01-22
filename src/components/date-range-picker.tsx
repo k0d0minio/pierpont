@@ -3,33 +3,86 @@
 import * as React from "react"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
-import { Field, FieldLabel } from "@/components/ui/field"
+import { Label } from "@/components/ui/label"
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { addDays, format } from "date-fns"
+import { format } from "date-fns"
 import { CalendarIcon } from "lucide-react"
-import { type DateRange } from "react-day-picker"
+import type { DateRange } from "react-day-picker"
+import { formatYmd, normalizeToUtcMidnight } from "@/lib/day-utils"
 
-export function DatePickerWithRange() {
-  const [date, setDate] = React.useState<DateRange | undefined>({
-    from: new Date(new Date().getFullYear(), 0, 20),
-    to: addDays(new Date(new Date().getFullYear(), 0, 20), 20),
-  })
+// Note: parseYmd is not needed here as we receive Date objects from the calendar
+
+interface DateRangePickerProps {
+  value?: DateRange | undefined
+  onChange?: (date: DateRange | undefined) => void
+  minDate?: Date
+  maxDate?: Date
+  label?: string
+  id?: string
+  name?: string
+  required?: boolean
+  className?: string
+  disabled?: boolean
+}
+
+export function DateRangePicker({
+  value,
+  onChange,
+  minDate,
+  maxDate,
+  label,
+  id,
+  name,
+  required = false,
+  className,
+  disabled = false,
+}: DateRangePickerProps) {
+  const [date, setDate] = React.useState<DateRange | undefined>(value)
+
+  React.useEffect(() => {
+    setDate(value)
+  }, [value])
+
+  const handleSelect = (selectedDate: DateRange | undefined) => {
+    // Normalize dates to UTC midnight to avoid timezone issues
+    const normalizedDate: DateRange | undefined = selectedDate
+      ? {
+          from: selectedDate.from ? normalizeToUtcMidnight(selectedDate.from) : undefined,
+          to: selectedDate.to ? normalizeToUtcMidnight(selectedDate.to) : undefined,
+        }
+      : undefined
+    setDate(normalizedDate)
+    onChange?.(normalizedDate)
+  }
+
+  // Format dates for form submission (YYYY-MM-DD)
+  const formatForForm = (date: Date | undefined): string => {
+    if (!date) return ""
+    return formatYmd(date)
+  }
 
   return (
-    <Field className="mx-auto w-60">
-      <FieldLabel htmlFor="date-picker-range">Date Picker Range</FieldLabel>
+    <div className={className}>
+      {label && (
+        <Label htmlFor={id} className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
+          {label}
+          {required && <span className="text-red-500 ml-1">*</span>}
+        </Label>
+      )}
       <Popover>
         <PopoverTrigger asChild>
           <Button
+            type="button"
             variant="outline"
-            id="date-picker-range"
-            className="justify-start px-2.5 font-normal"
+            id={id}
+            disabled={disabled}
+            className="w-full justify-start px-2.5 font-normal"
           >
-            <CalendarIcon />
+            <CalendarIcon className="mr-2 h-4 w-4" />
             {date?.from ? (
               date.to ? (
                 <>
@@ -40,7 +93,7 @@ export function DatePickerWithRange() {
                 format(date.from, "LLL dd, y")
               )
             ) : (
-              <span>Pick a date</span>
+              <span>Pick a date range</span>
             )}
           </Button>
         </PopoverTrigger>
@@ -49,11 +102,29 @@ export function DatePickerWithRange() {
             mode="range"
             defaultMonth={date?.from}
             selected={date}
-            onSelect={setDate}
+            onSelect={handleSelect}
             numberOfMonths={2}
+            disabled={disabled}
+            {...(minDate && { fromDate: minDate })}
+            {...(maxDate && { toDate: maxDate })}
           />
         </PopoverContent>
       </Popover>
-    </Field>
+      {/* Hidden inputs for form submission */}
+      {name && (
+        <>
+          <input
+            type="hidden"
+            name={`${name}From`}
+            value={formatForForm(date?.from)}
+          />
+          <input
+            type="hidden"
+            name={`${name}To`}
+            value={formatForForm(date?.to)}
+          />
+        </>
+      )}
+    </div>
   )
 }

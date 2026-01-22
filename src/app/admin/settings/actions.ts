@@ -30,7 +30,7 @@ export async function getAllPOCs(): Promise<ActionResponse<PointOfContact[]>> {
     return { ok: true, data: data || [] };
   } catch (error: any) {
     console.error('Error fetching POCs:', error);
-    return { ok: false, error: 'Failed to fetch POCs' };
+    return { ok: false, error: 'Échec de la récupération des points de contact' };
   }
 }
 
@@ -41,12 +41,12 @@ export async function getAllPOCs(): Promise<ActionResponse<PointOfContact[]>> {
  */
 export async function createPOC(formData: FormData): Promise<ActionResponse<PointOfContact>> {
   if (!(await isEditor())) {
-    return { ok: false, error: 'Not authenticated' };
+    return { ok: false, error: 'Non authentifié' };
   }
 
   const name = formData.get('name') as string | null;
   if (!name || !name.trim()) {
-    return { ok: false, error: 'Name is required' };
+    return { ok: false, error: 'Le nom est requis' };
   }
 
   const email = (formData.get('email') as string | null)?.trim() || null;
@@ -136,18 +136,18 @@ export async function createPOC(formData: FormData): Promise<ActionResponse<Poin
  */
 export async function updatePOC(formData: FormData): Promise<ActionResponse> {
   if (!(await isEditor())) {
-    return { ok: false, error: 'Not authenticated' };
+    return { ok: false, error: 'Non authentifié' };
   }
 
   const idStr = formData.get('id') as string | null;
   const id = Number(idStr);
   if (!Number.isFinite(id)) {
-    return { ok: false, error: 'Invalid POC ID' };
+    return { ok: false, error: 'ID de point de contact invalide' };
   }
 
   const name = formData.get('name') as string | null;
   if (!name || !name.trim()) {
-    return { ok: false, error: 'Name is required' };
+    return { ok: false, error: 'Le nom est requis' };
   }
 
   const email = (formData.get('email') as string | null)?.trim() || null;
@@ -229,7 +229,7 @@ export async function updatePOC(formData: FormData): Promise<ActionResponse> {
     return { ok: true };
   } catch (error: any) {
     console.error('Error updating POC:', error);
-    return { ok: false, error: 'Failed to update POC' };
+    return { ok: false, error: 'Échec de la mise à jour du point de contact' };
   }
 }
 
@@ -240,13 +240,13 @@ export async function updatePOC(formData: FormData): Promise<ActionResponse> {
  */
 export async function deletePOC(formData: FormData): Promise<ActionResponse> {
   if (!(await isEditor())) {
-    return { ok: false, error: 'Not authenticated' };
+    return { ok: false, error: 'Non authentifié' };
   }
 
   const idStr = formData.get('id') as string | null;
   const id = Number(idStr);
   if (!Number.isFinite(id)) {
-    return { ok: false, error: 'Invalid POC ID' };
+    return { ok: false, error: 'ID de point de contact invalide' };
   }
 
   try {
@@ -280,7 +280,7 @@ export async function deletePOC(formData: FormData): Promise<ActionResponse> {
     return { ok: true };
   } catch (error: any) {
     console.error('Error deleting POC:', error);
-    return { ok: false, error: 'Failed to delete POC' };
+    return { ok: false, error: 'Échec de la suppression du point de contact' };
   }
 }
 
@@ -314,12 +314,12 @@ export async function getAllVenueTypes(): Promise<ActionResponse<VenueType[]>> {
  */
 export async function createVenueType(formData: FormData): Promise<ActionResponse<VenueType>> {
   if (!(await isEditor())) {
-    return { ok: false, error: 'Not authenticated' };
+    return { ok: false, error: 'Non authentifié' };
   }
 
   const name = formData.get('name') as string | null;
   if (!name || !name.trim()) {
-    return { ok: false, error: 'Name is required' };
+    return { ok: false, error: 'Le nom est requis' };
   }
 
   // Generate code from name (lowercase, replace spaces with hyphens)
@@ -375,7 +375,7 @@ export async function createVenueType(formData: FormData): Promise<ActionRespons
     return { ok: true, data: newVenueType };
   } catch (error: any) {
     console.error('Error creating venue type:', error);
-    return { ok: false, error: 'Failed to create venue type' };
+    return { ok: false, error: 'Échec de la création du type de lieu' };
   }
 }
 
@@ -386,18 +386,18 @@ export async function createVenueType(formData: FormData): Promise<ActionRespons
  */
 export async function updateVenueType(formData: FormData): Promise<ActionResponse> {
   if (!(await isEditor())) {
-    return { ok: false, error: 'Not authenticated' };
+    return { ok: false, error: 'Non authentifié' };
   }
 
   const idStr = formData.get('id') as string | null;
   const id = Number(idStr);
   if (!Number.isFinite(id)) {
-    return { ok: false, error: 'Invalid venue type ID' };
+    return { ok: false, error: 'ID de type de lieu invalide' };
   }
 
   const name = formData.get('name') as string | null;
   if (!name || !name.trim()) {
-    return { ok: false, error: 'Name is required' };
+    return { ok: false, error: 'Le nom est requis' };
   }
 
   const code = ((formData.get('code') as string | null) || name.trim().toLowerCase().replace(/\s+/g, '-')).trim();
@@ -465,13 +465,13 @@ export async function updateVenueType(formData: FormData): Promise<ActionRespons
  */
 export async function deleteVenueType(formData: FormData): Promise<ActionResponse> {
   if (!(await isEditor())) {
-    return { ok: false, error: 'Not authenticated' };
+    return { ok: false, error: 'Non authentifié' };
   }
 
   const idStr = formData.get('id') as string | null;
   const id = Number(idStr);
   if (!Number.isFinite(id)) {
-    return { ok: false, error: 'Invalid venue type ID' };
+    return { ok: false, error: 'ID de type de lieu invalide' };
   }
 
   try {
@@ -484,7 +484,7 @@ export async function deleteVenueType(formData: FormData): Promise<ActionRespons
 
     if (checkError) {
       console.error('Error checking venue type references:', checkError);
-      return { ok: false, error: 'Failed to check venue type usage' };
+      return { ok: false, error: 'Échec de la vérification de l\'utilisation du type de lieu' };
     }
 
     if (entries && entries.length > 0) {
@@ -505,6 +505,6 @@ export async function deleteVenueType(formData: FormData): Promise<ActionRespons
     return { ok: true };
   } catch (error: any) {
     console.error('Error deleting venue type:', error);
-    return { ok: false, error: 'Failed to delete venue type' };
+    return { ok: false, error: 'Échec de la suppression du type de lieu' };
   }
 }

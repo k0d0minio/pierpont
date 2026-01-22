@@ -17,7 +17,7 @@ export function AdminIndicator() {
       <div className="fixed bottom-6 right-6 z-50">
         <Link href="/admin">
           <Button variant="ghost" className="text-sm text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300">
-            Admin
+            Administrateur
           </Button>
         </Link>
       </div>
@@ -31,8 +31,8 @@ export function AdminIndicator() {
           variant="ghost"
           size="icon"
           className="h-10 w-10 rounded-full shadow-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-          title="Settings"
-          aria-label="Settings"
+          title="Paramètres"
+          aria-label="Paramètres"
         >
           <Settings className="h-5 w-5" />
         </Button>
@@ -42,8 +42,8 @@ export function AdminIndicator() {
         size="icon"
         onClick={signOut}
         className="h-10 w-10 rounded-full shadow-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-zinc-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-        title="Sign Out"
-        aria-label="Sign Out"
+        title="Se déconnecter"
+        aria-label="Se déconnecter"
       >
         <LogOut className="h-5 w-5" />
       </Button>

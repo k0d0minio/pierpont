@@ -38,7 +38,7 @@ export default function MonthPagination({
       const monthDate = dateFromYmdUtc({ year, month, day: 1 })
       
       // Format month name
-      const monthLabel = new Intl.DateTimeFormat('en-GB', {
+      const monthLabel = new Intl.DateTimeFormat('fr-FR', {
         timeZone: 'Europe/Brussels',
         month: 'long',
         year: 'numeric'

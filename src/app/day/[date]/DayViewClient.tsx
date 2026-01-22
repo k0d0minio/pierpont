@@ -1,15 +1,18 @@
 "use client"
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { EntryCard } from "@/components/entry-card"
 import { AddEntryModal } from "@/components/add-entry-modal"
 import { AddBreakfastModal } from "@/components/add-breakfast-modal"
+import { AddHotelBookingDrawer } from "@/components/add-hotel-booking-drawer"
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogFooter, AlertDialogDescription } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { useAdminAuth } from "@/lib/AdminAuthProvider"
 import { createHotelBooking, updateHotelBooking, deleteHotelBooking, createBreakfastConfiguration, updateBreakfastConfiguration, deleteBreakfastConfiguration, createGolfEntry, deleteGolfEntry, createEventEntry, deleteEventEntry, createReservationEntry, deleteReservationEntry, updateGolfEntry, updateEventEntry, updateReservationEntry, countRecurringOccurrences } from "./actions"
-import { Coffee, Building, LandPlot } from 'lucide-react'
+import { Coffee, Building, LandPlot, Info } from 'lucide-react'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import type { Entry, HotelBooking, BreakfastConfiguration } from "@/types/supabase"
 import { DaySummaryCard } from "@/components/day-summary-card"
 
@@ -46,13 +49,16 @@ export default function DayViewClient({
   reservationEntries = [],
   dateParam
 }: DayViewClientProps) {
+  const router = useRouter()
   const { isAuthenticated, isLoading } = useAdminAuth()
   const [modalOpen, setModalOpen] = useState(false)
   const [modalType, setModalType] = useState<ModalType>(null)
   const [breakfastModalOpen, setBreakfastModalOpen] = useState(false)
+  const [hotelBookingDrawerOpen, setHotelBookingDrawerOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [editingEntry, setEditingEntry] = useState<any>(null)
+  const [editingBooking, setEditingBooking] = useState<HotelBookingWithRelations | null>(null)
   const [editingBreakfast, setEditingBreakfast] = useState<BreakfastConfigWithRelations | null>(null)
   const [defaultBooking, setDefaultBooking] = useState<HotelBookingWithRelations | null>(null)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
@@ -71,10 +77,29 @@ export default function DayViewClient({
 
   const openEditModal = (entry: any) => {
     // Use the entry's type, or 'hotel' for hotel bookings (which don't have a type field)
-    setModalType((entry.type || 'hotel') as ModalType)
-    setModalOpen(true)
+    if (entry.type || entry.checkInDate) {
+      // It's a hotel booking
+      setEditingBooking(entry)
+      setHotelBookingDrawerOpen(true)
+      setError(null)
+    } else {
+      setModalType((entry.type || 'hotel') as ModalType)
+      setModalOpen(true)
+      setError(null)
+      setEditingEntry(entry)
+    }
+  }
+
+  const openHotelBookingDrawer = () => {
+    setEditingBooking(null)
+    setHotelBookingDrawerOpen(true)
     setError(null)
-    setEditingEntry(entry)
+  }
+
+  const closeHotelBookingDrawer = () => {
+    setHotelBookingDrawerOpen(false)
+    setError(null)
+    setEditingBooking(null)
   }
 
   const openBreakfastModal = (booking: HotelBookingWithRelations | null = null, config: BreakfastConfigWithRelations | null = null) => {
@@ -109,9 +134,6 @@ export default function DayViewClient({
       if (isEditMode) {
         // Update operations
         switch (modalType) {
-          case 'hotel':
-            result = await updateHotelBooking(formData)
-            break
           case 'golf':
             result = await updateGolfEntry(formData)
             break
@@ -122,15 +144,12 @@ export default function DayViewClient({
             result = await updateReservationEntry(formData)
             break
           default:
-            setError('Unknown entry type')
+            setError('Type d\'entrée inconnu')
             return
         }
       } else {
         // Create operations
         switch (modalType) {
-          case 'hotel':
-            result = await createHotelBooking(formData)
-            break
           case 'golf':
             result = await createGolfEntry(formData)
             break
@@ -141,20 +160,48 @@ export default function DayViewClient({
             result = await createReservationEntry(formData)
             break
           default:
-            setError('Unknown entry type')
+            setError('Type d\'entrée inconnu')
             return
         }
       }
 
       if (result?.ok) {
         closeModal()
-        // The page will revalidate automatically due to revalidatePath in actions
+        router.refresh()
       } else {
-        setError(result?.error || `Failed to ${isEditMode ? 'update' : 'create'} entry`)
+        setError(result?.error || `Échec de la ${isEditMode ? 'mise à jour' : 'création'} de l'entrée`)
       }
     } catch (err) {
       console.error('Form submission error:', err)
-      setError('An unexpected error occurred')
+      setError('Une erreur inattendue s\'est produite')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleHotelBookingSubmit = async (formData: FormData) => {
+    setIsSubmitting(true)
+    setError(null)
+
+    try {
+      let result
+      const isEditMode = !!editingBooking
+
+      if (isEditMode) {
+        result = await updateHotelBooking(formData)
+      } else {
+        result = await createHotelBooking(formData)
+      }
+
+      if (result?.ok) {
+        closeHotelBookingDrawer()
+        router.refresh()
+      } else {
+        setError(result?.error || `Failed to ${isEditMode ? 'update' : 'create'} hotel booking`)
+      }
+    } catch (err) {
+      console.error('Hotel booking submission error:', err)
+      setError('Une erreur inattendue s\'est produite')
     } finally {
       setIsSubmitting(false)
     }
@@ -176,13 +223,13 @@ export default function DayViewClient({
 
       if (result?.ok) {
         closeBreakfastModal()
-        // The page will revalidate automatically due to revalidatePath in actions
+        router.refresh()
       } else {
-        setError(result?.error || `Failed to ${isEditMode ? 'update' : 'create'} breakfast configuration`)
+        setError(result?.error || `Échec de la ${isEditMode ? 'mise à jour' : 'création'} de la configuration de petit-déjeuner`)
       }
     } catch (err) {
       console.error('Breakfast form submission error:', err)
-      setError('An unexpected error occurred')
+      setError('Une erreur inattendue s\'est produite')
     } finally {
       setIsSubmitting(false)
     }
@@ -299,7 +346,7 @@ export default function DayViewClient({
     }
 
     if (result?.ok) {
-      // The page will revalidate automatically due to revalidatePath in actions
+      router.refresh()
     }
 
     setDeleteConfirmOpen(false)
@@ -351,7 +398,7 @@ export default function DayViewClient({
 
   // Don't render until authentication state is loaded
   if (isLoading) {
-    return <div className="text-center py-8">Loading...</div>
+    return <div className="text-center py-8">Chargement...</div>
   }
 
   return (
@@ -374,18 +421,18 @@ export default function DayViewClient({
               <div className="flex items-center gap-3">
                 <Building className="h-5 w-5 text-zinc-600 dark:text-zinc-400" />
                 <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-                  Hotel Bookings
+                  Réservations d'hôtel
                 </h2>
                 <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
                   {totalHotelGuests}
                 </span>
               </div>
               <Button
-                onClick={() => openModal('hotel')}
+                onClick={openHotelBookingDrawer}
                 variant="default"
                 className="text-sm whitespace-nowrap"
               >
-                Add Hotel Booking
+                Ajouter une réservation d'hôtel
               </Button>
             </div>
 
@@ -395,7 +442,7 @@ export default function DayViewClient({
                 <div className="flex items-center gap-2">
                   <Coffee className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                   <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                    Total Breakfast: {totalBreakfastGuests} guest{totalBreakfastGuests !== 1 ? 's' : ''}
+                    Total petit-déjeuner : {totalBreakfastGuests} invité{totalBreakfastGuests !== 1 ? 's' : ''}
                   </span>
                   {breakfastConfigs.length > 0 && (
                     <span className="text-xs text-zinc-600 dark:text-zinc-400">
@@ -410,7 +457,7 @@ export default function DayViewClient({
             )}
 
             {hotelBookings.length > 0 ? (
-              <div className="space-y-4">
+              <div className="space-y-2">
                 {hotelBookings.map((booking) => {
                   const bookingBreakfast = breakfastConfigs.find(
                     config => config.hotelBookingId === booking.id && config.breakfastDate === dateParam
@@ -420,125 +467,106 @@ export default function DayViewClient({
                   return (
                     <div
                       key={booking.id}
-                      className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4"
+                      className="flex items-center justify-between gap-2 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2"
                     >
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <h3 className="font-semibold text-zinc-900 dark:text-zinc-100">
-                              {booking.guestName || 'Unnamed Guest'}
-                            </h3>
-                            {booking.isTourOperator && (
-                              <span className="text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-200 px-2 py-1 rounded">
-                                Tour Operator
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <button
+                            type="button"
+                            className="flex-1 flex items-center gap-2 text-left hover:opacity-80 transition-opacity"
+                          >
+                            <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                              {booking.guestName || 'Invité sans nom'}
+                            </span>
+                            {booking.guestCount && (
+                              <span className="text-sm text-zinc-600 dark:text-zinc-400">
+                                - {booking.guestCount} invité{booking.guestCount !== 1 ? 's' : ''}
                               </span>
                             )}
-                          </div>
-                          <div className="text-sm text-zinc-600 dark:text-zinc-400 space-y-1">
-                            {booking.roomNumber && (
-                              <div>Room: {booking.roomNumber}</div>
-                            )}
-                            {booking.guestCount && (
-                              <div>Guests: {booking.guestCount}</div>
-                            )}
+                            <Info className="h-3 w-3 text-zinc-400 dark:text-zinc-500" />
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-80" align="start">
+                          <div className="space-y-3">
                             <div>
-                              {booking.checkInDate} to {booking.checkOutDate} ({nights} night{nights !== 1 ? 's' : ''})
-                            </div>
-                          </div>
-                          {booking.notes && (
-                            <div className="mt-2 text-sm text-zinc-700 dark:text-zinc-300">
-                              {booking.notes}
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex gap-2">
-                          <button
-                            type="button"
-                            onClick={() => openEditModal(booking)}
-                            className="p-1.5 rounded-full bg-white dark:bg-zinc-800 shadow-md border border-zinc-200 dark:border-zinc-700 hover:shadow-lg transition-all"
-                            title="Edit booking"
-                            aria-label="Edit booking"
-                          >
-                            <svg className="h-4 w-4 text-zinc-600 dark:text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(booking, 'booking')}
-                            className="p-1.5 rounded-full bg-white dark:bg-zinc-800 shadow-md border border-zinc-200 dark:border-zinc-700 hover:shadow-lg transition-all"
-                            title="Delete booking"
-                            aria-label="Delete booking"
-                          >
-                            <svg className="h-4 w-4 text-zinc-600 dark:text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Breakfast Configuration */}
-                      <div className="mt-3 pt-3 border-t border-blue-200 dark:border-blue-700">
-                        {bookingBreakfast ? (
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <Coffee className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                                <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                                  Breakfast: {bookingBreakfast.totalGuests} guest{bookingBreakfast.totalGuests !== 1 ? 's' : ''}
-                                </span>
-                                {formatTableBreakdown(bookingBreakfast.tableBreakdown) && (
-                                  <span className="text-xs text-zinc-600 dark:text-zinc-400">
-                                    ({formatTableBreakdown(bookingBreakfast.tableBreakdown)})
+                              <div className="flex items-center gap-2 mb-2">
+                                <h3 className="font-semibold text-zinc-900 dark:text-zinc-100">
+                                  {booking.guestName || 'Invité sans nom'}
+                                </h3>
+                                {booking.isTourOperator && (
+                                  <span className="text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-200 px-2 py-1 rounded">
+                                    Opérateur touristique
                                   </span>
                                 )}
                               </div>
-                              {bookingBreakfast.startTime && (
-                                <div className="text-xs text-zinc-600 dark:text-zinc-400">
-                                  Time: {bookingBreakfast.startTime}
+                              {booking.guestCount && (
+                                <div className="text-sm text-zinc-600 dark:text-zinc-400 mb-1">
+                                  Invités : {booking.guestCount}
                                 </div>
                               )}
-                              {bookingBreakfast.notes && (
-                                <div className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
-                                  {bookingBreakfast.notes}
+                              <div className="text-sm text-zinc-600 dark:text-zinc-400">
+                                {booking.checkInDate} au {booking.checkOutDate} ({nights} nuit{nights !== 1 ? 's' : ''})
+                              </div>
+                            </div>
+                            {booking.notes && (
+                              <div className="pt-2 border-t border-zinc-200 dark:border-zinc-700">
+                                <div className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">Notes :</div>
+                                <div className="text-sm text-zinc-700 dark:text-zinc-300">
+                                  {booking.notes}
                                 </div>
-                              )}
-                            </div>
-                            <div className="flex gap-2">
-                              <button
-                                type="button"
-                                onClick={() => openBreakfastModal(booking, bookingBreakfast)}
-                                className="p-1 rounded bg-white dark:bg-zinc-800 shadow border border-zinc-200 dark:border-zinc-700 hover:shadow-md transition-all text-xs"
-                                title="Edit breakfast"
-                                aria-label="Edit breakfast"
-                              >
-                                Edit
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleDelete(bookingBreakfast, 'breakfast')}
-                                className="p-1 rounded bg-white dark:bg-zinc-800 shadow border border-zinc-200 dark:border-zinc-700 hover:shadow-md transition-all text-xs"
-                                title="Delete breakfast"
-                                aria-label="Delete breakfast"
-                              >
-                                Delete
-                              </button>
-                            </div>
+                              </div>
+                            )}
+                            {bookingBreakfast && (
+                              <div className="pt-2 border-t border-zinc-200 dark:border-zinc-700">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <Coffee className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                                  <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                                    Petit-déjeuner : {bookingBreakfast.totalGuests} invité{bookingBreakfast.totalGuests !== 1 ? 's' : ''}
+                                  </span>
+                                  {formatTableBreakdown(bookingBreakfast.tableBreakdown) && (
+                                    <span className="text-xs text-zinc-600 dark:text-zinc-400">
+                                      ({formatTableBreakdown(bookingBreakfast.tableBreakdown)})
+                                    </span>
+                                  )}
+                                </div>
+                                {bookingBreakfast.startTime && (
+                                  <div className="text-xs text-zinc-600 dark:text-zinc-400">
+                                    Heure : {bookingBreakfast.startTime}
+                                  </div>
+                                )}
+                                {bookingBreakfast.notes && (
+                                  <div className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
+                                    {bookingBreakfast.notes}
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
-                        ) : (
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-zinc-500 dark:text-zinc-400">
-                              No breakfast configured
-                            </span>
-                            <Button
-                              onClick={() => openBreakfastModal(booking)}
-                              variant="default"
-                              className="text-xs"
-                            >
-                              Add Breakfast
-                            </Button>
-                          </div>
-                        )}
+                        </PopoverContent>
+                      </Popover>
+                      <div className="flex gap-1">
+                        <button
+                          type="button"
+                          onClick={() => openEditModal(booking)}
+                          className="p-1.5 rounded bg-white dark:bg-zinc-800 shadow border border-zinc-200 dark:border-zinc-700 hover:shadow-md transition-all"
+                          title="Modifier la réservation"
+                          aria-label="Modifier la réservation"
+                        >
+                          <svg className="h-3.5 w-3.5 text-zinc-600 dark:text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(booking, 'booking')}
+                          className="p-1.5 rounded bg-white dark:bg-zinc-800 shadow border border-zinc-200 dark:border-zinc-700 hover:shadow-md transition-all"
+                          title="Supprimer la réservation"
+                          aria-label="Supprimer la réservation"
+                        >
+                          <svg className="h-3.5 w-3.5 text-zinc-600 dark:text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
                       </div>
                     </div>
                   )
@@ -547,7 +575,7 @@ export default function DayViewClient({
             ) : (
               <div className="text-center py-8 text-zinc-500 dark:text-zinc-400">
                 <Building className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                <p>No hotel bookings for this date</p>
+                <p>Aucune réservation d'hôtel pour cette date</p>
               </div>
             )}
           </section>
@@ -559,7 +587,7 @@ export default function DayViewClient({
             <div className="flex items-center gap-3">
               <LandPlot className="h-5 w-5 text-zinc-600 dark:text-zinc-400" />
               <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-                Golf and Events
+                Golf et événements
               </h2>
               <span className="text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-200 px-2 py-1 rounded">
                 {golfEntries.length + eventEntries.length}
@@ -572,14 +600,14 @@ export default function DayViewClient({
                   variant="default"
                   className="text-sm whitespace-nowrap"
                 >
-                  Add Golf
+                  Ajouter du golf
                 </Button>
                 <Button
                   onClick={() => openModal('event')}
                   variant="default"
                   className="text-sm whitespace-nowrap"
                 >
-                  Add Event
+                  Ajouter un événement
                 </Button>
               </div>
             )}
@@ -608,7 +636,7 @@ export default function DayViewClient({
           ) : (
             <div className="text-center py-8 text-zinc-500 dark:text-zinc-400">
               <LandPlot className="h-12 w-12 mx-auto mb-3 opacity-50" />
-              <p>No golf or events scheduled</p>
+              <p>Aucun golf ou événement prévu</p>
             </div>
           )}
         </section>
@@ -624,6 +652,19 @@ export default function DayViewClient({
         isSubmitting={isSubmitting}
         error={error}
         editEntry={editingEntry}
+      />
+
+      {/* Hotel Booking Drawer */}
+      <AddHotelBookingDrawer
+        isOpen={hotelBookingDrawerOpen}
+        onClose={closeHotelBookingDrawer}
+        onSubmit={handleHotelBookingSubmit}
+        dateParam={dateParam}
+        isSubmitting={isSubmitting}
+        error={error}
+        editBooking={editingBooking}
+        existingBreakfastConfigs={editingBooking ? breakfastConfigs.filter(c => c.hotelBookingId === editingBooking.id) : []}
+        existingReservations={editingBooking ? reservationEntries.filter(r => r.hotelBookingId === editingBooking.id) : []}
       />
 
       {/* Breakfast Configuration Modal */}
@@ -643,22 +684,22 @@ export default function DayViewClient({
       <AlertDialog open={deleteConfirmOpen} onOpenChange={(open) => !open && cancelDelete()}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirm Delete</AlertDialogTitle>
+            <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
             <AlertDialogDescription className="text-zinc-700 dark:text-zinc-300">
-              Are you sure you want to delete this {
+              Êtes-vous sûr de vouloir supprimer cette {
                 deleteType === 'breakfast'
-                  ? 'breakfast configuration'
+                  ? 'configuration de petit-déjeuner'
                   : deleteType === 'booking'
-                    ? 'hotel booking'
+                    ? 'réservation d\'hôtel'
                     : deleteType === 'golf'
-                      ? 'golf entry'
+                      ? 'entrée de golf'
                       : deleteType === 'event'
-                        ? 'event entry'
+                        ? 'entrée d\'événement'
                         : deleteType === 'reservation'
-                          ? 'reservation entry'
-                          : (entryToDelete?.type || deleteType) + ' entry'
-              }? This action cannot be undone.
-              {deleteType === 'booking' && ' All associated breakfast configurations will also be deleted.'}
+                          ? 'entrée de réservation'
+                          : (entryToDelete?.type || deleteType) + ' entrée'
+              } ? Cette action ne peut pas être annulée.
+              {deleteType === 'booking' && ' Toutes les configurations de petit-déjeuner associées seront également supprimées.'}
             </AlertDialogDescription>
           </AlertDialogHeader>
 
@@ -674,10 +715,10 @@ export default function DayViewClient({
                 />
                 <div className="flex-1">
                   <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                    Delete all {recurringOccurrencesCount} other occurrence{recurringOccurrencesCount !== 1 ? 's' : ''} of this recurring {deleteType === 'event' ? 'event' : 'golf entry'}
+                    Supprimer toutes les {recurringOccurrencesCount} autres occurrences de cette {deleteType === 'event' ? 'événement' : 'entrée de golf'} récurrente
                   </p>
                   <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
-                    If unchecked, only this occurrence will be deleted.
+                    Si non coché, seule cette occurrence sera supprimée.
                   </p>
                 </div>
               </Label>
@@ -685,10 +726,10 @@ export default function DayViewClient({
           )}
           <AlertDialogFooter>
             <Button type="button" variant="ghost" onClick={cancelDelete}>
-              Cancel
+              Annuler
             </Button>
             <Button type="button" variant="destructive" onClick={confirmDelete}>
-              Delete
+              Supprimer
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>

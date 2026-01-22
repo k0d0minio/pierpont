@@ -49,7 +49,7 @@ type VenueProps = {
 
 // Zod schema
 const venueTypeSchema = z.object({
-  name: z.string().min(1, "Name is required"),
+  name: z.string().min(1, "Le nom est requis"),
   code: z.string().optional(),
 });
 
@@ -96,10 +96,10 @@ export default function VenueManagement({ initialVenueTypes = [] }: VenueProps) 
       if (result.ok) {
         setVenueTypes(result.data || []);
       } else {
-        setError(result.error || 'Failed to load venue types');
+        setError(result.error || 'Échec du chargement des types de lieu');
       }
       } catch {
-        setError('Failed to load venue types');
+        setError('Échec du chargement des types de lieu');
       } finally {
       setIsLoading(false);
     }
@@ -151,16 +151,16 @@ export default function VenueManagement({ initialVenueTypes = [] }: VenueProps) 
         : await createVenueType(formData);
 
       if (result.ok) {
-        setSuccess(editingVenueType ? 'Venue type updated successfully' : 'Venue type created successfully');
+        setSuccess(editingVenueType ? 'Type de lieu mis à jour avec succès' : 'Type de lieu créé avec succès');
         setIsVenueTypeModalOpen(false);
         venueTypeForm.reset();
         await refreshVenueTypes();
         setTimeout(() => setSuccess(''), 3000);
       } else {
-        setError(result.error || 'Failed to save venue type');
+        setError(result.error || 'Échec de l\'enregistrement du type de lieu');
       }
     } catch {
-      setError('An error occurred. Please try again.');
+      setError('Une erreur s\'est produite. Veuillez réessayer.');
     } finally {
       setIsLoading(false);
     }
@@ -184,15 +184,15 @@ export default function VenueManagement({ initialVenueTypes = [] }: VenueProps) 
       const result = await deleteVenueType(formData);
 
       if (result.ok) {
-        setSuccess('Venue type deleted successfully');
+        setSuccess('Type de lieu supprimé avec succès');
         setDeleteVenueTypeDialog(null);
         await refreshVenueTypes();
         setTimeout(() => setSuccess(''), 3000);
       } else {
-        setError(result.error || 'Failed to delete venue type');
+        setError(result.error || 'Échec de la suppression du type de lieu');
       }
     } catch {
-      setError('An error occurred. Please try again.');
+      setError('Une erreur s\'est produite. Veuillez réessayer.');
     } finally {
       setIsLoading(false);
     }
@@ -200,9 +200,9 @@ export default function VenueManagement({ initialVenueTypes = [] }: VenueProps) 
 
   // Format date for display
   const formatDate = (dateString: string | null | undefined): string => {
-    if (!dateString) return 'N/A';
+    if (!dateString) return 'N/D';
     try {
-      return new Date(dateString).toLocaleDateString('en-GB', {
+      return new Date(dateString).toLocaleDateString('fr-FR', {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
@@ -230,13 +230,13 @@ export default function VenueManagement({ initialVenueTypes = [] }: VenueProps) 
       <section>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-xl font-semibold">Venue Types</h2>
+            <h2 className="text-xl font-semibold">Types de lieu</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Manage venue types used in entries
+              Gérez les types de lieu utilisés dans les entrées
             </p>
           </div>
           <Button onClick={handleCreateVenueType}>
-            Add Venue Type
+            Ajouter un type de lieu
           </Button>
         </div>
 
@@ -244,9 +244,9 @@ export default function VenueManagement({ initialVenueTypes = [] }: VenueProps) 
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
+              <TableHead>Nom</TableHead>
               <TableHead>Code</TableHead>
-              <TableHead>Created</TableHead>
+              <TableHead>Créé</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -254,7 +254,7 @@ export default function VenueManagement({ initialVenueTypes = [] }: VenueProps) 
             {venueTypes.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={4} className="text-center text-muted-foreground">
-                  No venue types found. Click &quot;Add Venue Type&quot; to create one.
+                  Aucun type de lieu trouvé. Cliquez sur &quot;Ajouter un type de lieu&quot; pour en créer un.
                 </TableCell>
               </TableRow>
             ) : (
@@ -270,7 +270,7 @@ export default function VenueManagement({ initialVenueTypes = [] }: VenueProps) 
                         size="icon"
                         onClick={() => handleEditVenueType(venueType)}
                         className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-                        aria-label="Edit Venue Type"
+                        aria-label="Modifier le type de lieu"
                       >
                         <Pencil />
                       </Button>
@@ -279,7 +279,7 @@ export default function VenueManagement({ initialVenueTypes = [] }: VenueProps) 
                         size="icon"
                         onClick={() => handleDeleteVenueType(venueType)}
                         className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
-                        aria-label="Delete Venue Type"
+                        aria-label="Supprimer le type de lieu"
                       >
                         <Trash2 />
                       </Button>
@@ -296,7 +296,7 @@ export default function VenueManagement({ initialVenueTypes = [] }: VenueProps) 
       <Dialog open={isVenueTypeModalOpen} onOpenChange={(open) => !isLoading && setIsVenueTypeModalOpen(open)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingVenueType ? 'Edit Venue Type' : 'Add Venue Type'}</DialogTitle>
+            <DialogTitle>{editingVenueType ? 'Modifier le type de lieu' : 'Ajouter un type de lieu'}</DialogTitle>
           </DialogHeader>
           <form onSubmit={venueTypeForm.handleSubmit(onVenueTypeSubmit)}>
             <div className="space-y-4 py-4">
@@ -305,12 +305,12 @@ export default function VenueManagement({ initialVenueTypes = [] }: VenueProps) 
                 control={venueTypeForm.control}
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor={field.name}>Name *</FieldLabel>
+                    <FieldLabel htmlFor={field.name}>Nom *</FieldLabel>
                     <Input
                       {...field}
                       id={field.name}
                       aria-invalid={fieldState.invalid}
-                      placeholder="e.g., Events Hall"
+                      placeholder="ex. Salle des événements"
                     />
                     {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                   </Field>
@@ -326,14 +326,14 @@ export default function VenueManagement({ initialVenueTypes = [] }: VenueProps) 
                       {...field}
                       id={field.name}
                       aria-invalid={fieldState.invalid}
-                      placeholder="e.g., events-hall (auto-generated from name)"
+                      placeholder="ex. salle-evenements (généré automatiquement à partir du nom)"
                       onChange={(e) => {
                         const value = e.target.value.toLowerCase().replace(/\s+/g, '-');
                         field.onChange(value);
                       }}
                     />
                     <FieldDescription>
-                      Code is auto-generated from name if not provided. Used internally for references.
+                      Le code est généré automatiquement à partir du nom s'il n'est pas fourni. Utilisé en interne pour les références.
                     </FieldDescription>
                     {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                   </Field>
@@ -347,10 +347,10 @@ export default function VenueManagement({ initialVenueTypes = [] }: VenueProps) 
                 onClick={() => setIsVenueTypeModalOpen(false)}
                 disabled={isLoading}
               >
-                Cancel
+                Annuler
               </Button>
               <Button type="submit" disabled={isLoading}>
-                {isLoading ? 'Saving...' : editingVenueType ? 'Update Venue Type' : 'Create Venue Type'}
+                {isLoading ? 'Enregistrement...' : editingVenueType ? 'Mettre à jour le type de lieu' : 'Créer le type de lieu'}
               </Button>
             </DialogFooter>
           </form>
@@ -361,19 +361,19 @@ export default function VenueManagement({ initialVenueTypes = [] }: VenueProps) 
       <AlertDialog open={!!deleteVenueTypeDialog} onOpenChange={(open) => !open && setDeleteVenueTypeDialog(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Venue Type</AlertDialogTitle>
+            <AlertDialogTitle>Supprimer le type de lieu</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete &quot;{deleteVenueTypeDialog?.name}&quot;? This action cannot be undone.
+              Êtes-vous sûr de vouloir supprimer &quot;{deleteVenueTypeDialog?.name}&quot; ? Cette action ne peut pas être annulée.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isLoading}>Annuler</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDeleteVenueType}
               disabled={isLoading}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete
+              Supprimer
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -134,7 +134,7 @@ export function AddBreakfastModal({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{isEditMode ? 'Edit Breakfast Configuration' : 'Add Breakfast Configuration'}</DialogTitle>
+          <DialogTitle>{isEditMode ? 'Modifier la configuration du petit-déjeuner' : 'Ajouter une configuration de petit-déjeuner'}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <input type="hidden" name="breakfastDate" value={dateParam || editConfig?.breakfastDate || ''} />
@@ -142,7 +142,7 @@ export function AddBreakfastModal({
           <div className="space-y-4">
             <div>
               <Label htmlFor="hotelBookingId" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                Hotel Booking *
+                Réservation d'hôtel *
               </Label>
               <select
                 id="hotelBookingId"
@@ -153,16 +153,16 @@ export function AddBreakfastModal({
                 className="w-full rounded-md border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 disabled={isEditMode || !!defaultBooking}
               >
-                <option value="">Select a hotel booking...</option>
+                <option value="">Sélectionner une réservation d'hôtel...</option>
                 {activeBookings.map(booking => (
                   <option key={booking.id} value={String(booking.id)}>
-                    {booking.guestName || 'Unnamed'} - Room {booking.roomNumber || 'N/A'} ({booking.checkInDate} to {booking.checkOutDate})
+                    {booking.guestName || 'Sans nom'} ({booking.checkInDate} au {booking.checkOutDate})
                   </option>
                 ))}
               </select>
               {activeBookings.length === 0 && !isEditMode && (
                 <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-                  No active hotel bookings for this date
+                  Aucune réservation d'hôtel active pour cette date
                 </p>
               )}
             </div>
@@ -170,7 +170,7 @@ export function AddBreakfastModal({
             <div>
               <div className="flex items-center justify-between mb-1">
                 <Label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                  Table Breakdown *
+                  Répartition des tables *
                 </Label>
                 <Button
                   type="button"
@@ -178,7 +178,7 @@ export function AddBreakfastModal({
                   onClick={addTable}
                   className="text-xs"
                 >
-                  + Add Table
+                  + Ajouter une table
                 </Button>
               </div>
               <div className="space-y-2">
@@ -189,7 +189,7 @@ export function AddBreakfastModal({
                       <Input
                         type="number"
                         min="1"
-                        placeholder={`Table ${index + 1} guests`}
+                        placeholder={`Table ${index + 1} invités`}
                         value={table}
                         onChange={(e: ChangeEvent<HTMLInputElement>) => updateTable(index, e.target.value)}
                         className="w-full"
@@ -200,7 +200,7 @@ export function AddBreakfastModal({
                         type="button"
                         onClick={() => removeTable(index)}
                         className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 rounded"
-                        title="Remove table"
+                        title="Supprimer la table"
                       >
                         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -211,18 +211,18 @@ export function AddBreakfastModal({
                 ))}
               </div>
               <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-                Enter the number of guests for each table
+                Entrez le nombre d'invités pour chaque table
               </p>
               {totalGuests > 0 && (
                 <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400 mt-2">
-                  Total: {totalGuests} guest{totalGuests !== 1 ? 's' : ''} ({tables.filter(t => Number(t) > 0).join('+')})
+                  Total : {totalGuests} invité{totalGuests !== 1 ? 's' : ''} ({tables.filter(t => Number(t) > 0).join('+')})
                 </p>
               )}
             </div>
 
             <div>
               <Label htmlFor="startTime" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                Start Time
+                Heure de début
               </Label>
               <Input 
                 id="startTime"
@@ -241,7 +241,7 @@ export function AddBreakfastModal({
                 id="notes"
                 name="notes" 
                 rows={3}
-                placeholder="Additional notes..."
+                placeholder="Notes supplémentaires..."
                 defaultValue={editConfig?.notes || ''}
                 className="w-full"
               />
@@ -258,14 +258,14 @@ export function AddBreakfastModal({
           
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
-              Cancel
+              Annuler
             </Button>
             <Button 
               type="submit" 
               variant="default" 
               disabled={isSubmitting || (!isEditMode && (activeBookings.length === 0 || !selectedBookingId || totalGuests === 0))}
             >
-              {isSubmitting ? (isEditMode ? 'Updating...' : 'Adding...') : (isEditMode ? 'Update' : 'Add')}
+              {isSubmitting ? (isEditMode ? 'Mise à jour...' : 'Ajout...') : (isEditMode ? 'Mettre à jour' : 'Ajouter')}
             </Button>
           </DialogFooter>
         </form>

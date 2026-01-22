@@ -69,11 +69,11 @@ export function AdminAuthProvider({ children }: AdminAuthProviderProps) {
         await syncAuthState(false)
         return { ok: true }
       } else {
-        return { ok: false, error: result.error || "Authentication failed" }
+        return { ok: false, error: result.error || "Échec de l'authentification" }
       }
     } catch (error) {
       console.error("Error signing in:", error)
-      return { ok: false, error: "Failed to sign in" }
+      return { ok: false, error: "Échec de la connexion" }
     }
   }, [syncAuthState])
   

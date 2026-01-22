@@ -51,7 +51,7 @@ export default async function Home({ searchParams }: HomeProps) {
   // Query days for the month, filtering out past days
   const { data: days } = await supabase
     .from('Day')
-    .select('*, entries:Entry(*)')
+    .select('*, entries:Entry(*, venueType:VenueType(*), poc:PointOfContact(*))')
     .gte('dateISO', startDate.toISOString())
     .lte('dateISO', monthRange.endDate.toISOString())
     .order('dateISO', { ascending: true });
@@ -63,7 +63,7 @@ export default async function Home({ searchParams }: HomeProps) {
     .from('HotelBooking')
     .select('*')
     .lt('checkInDate', addDays(monthRange.endDate, 1).toISOString().split('T')[0])
-    .gt('checkOutDate', startDateStr)
+    .gte('checkOutDate', startDateStr)
     .order('checkInDate', { ascending: true });
 
   // Query breakfast configurations for the month range
@@ -74,17 +74,19 @@ export default async function Home({ searchParams }: HomeProps) {
     .lte('breakfastDate', endDateStr);
 
   return (
-    <div className="font-sans min-h-screen p-4 sm:p-6 lg:p-8">
+    <div className="font-sans h-screen flex flex-col overflow-hidden">
       <AdminIndicator />
       
-      <HomeClient
-        initialDays={days || []}
-        initialHotelBookings={hotelBookings || []}
-        initialBreakfastConfigs={breakfastConfigs || []}
-        isCurrentMonth={monthRange.startDate <= todayUtc && monthRange.endDate >= todayUtc}
-        monthStartDate={monthRange.startDate}
-        monthEndDate={monthRange.endDate}
-      />
+      <div className="flex-1 min-h-0">
+        <HomeClient
+          initialDays={days || []}
+          initialHotelBookings={hotelBookings || []}
+          initialBreakfastConfigs={breakfastConfigs || []}
+          isCurrentMonth={monthRange.startDate <= todayUtc && monthRange.endDate >= todayUtc}
+          monthStartDate={monthRange.startDate}
+          monthEndDate={monthRange.endDate}
+        />
+      </div>
     </div>
   );
 }

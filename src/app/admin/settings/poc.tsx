@@ -48,11 +48,11 @@ type POCProps = {
 
 // Zod schema
 const pocSchema = z.object({
-  name: z.string().min(1, "Name is required"),
+  name: z.string().min(1, "Le nom est requis"),
   role: z.string().optional(),
   phoneNumber: z.string().optional(),
   email: z.union([
-    z.string().email("Invalid email address"),
+    z.string().email("Adresse e-mail invalide"),
     z.literal(""),
   ]).optional(),
 });
@@ -90,10 +90,10 @@ export default function POCManagement({ initialPOCs = [] }: POCProps) {
       if (result.ok) {
         setPocs(result.data || []);
       } else {
-        setError(result.error || 'Failed to load POCs');
+        setError(result.error || 'Échec du chargement des points de contact');
       }
       } catch {
-        setError('Failed to load POCs');
+        setError('Échec du chargement des points de contact');
       } finally {
       setIsLoading(false);
     }
@@ -149,16 +149,16 @@ export default function POCManagement({ initialPOCs = [] }: POCProps) {
         : await createPOC(formData);
 
       if (result.ok) {
-        setSuccess(editingPOC ? 'POC updated successfully' : 'POC created successfully');
+        setSuccess(editingPOC ? 'Point de contact mis à jour avec succès' : 'Point de contact créé avec succès');
         setIsPOCModalOpen(false);
         pocForm.reset();
         await refreshPOCs();
         setTimeout(() => setSuccess(''), 3000);
       } else {
-        setError(result.error || 'Failed to save POC');
+        setError(result.error || 'Échec de l\'enregistrement du point de contact');
       }
     } catch {
-      setError('An error occurred. Please try again.');
+      setError('Une erreur s\'est produite. Veuillez réessayer.');
     } finally {
       setIsLoading(false);
     }
@@ -182,15 +182,15 @@ export default function POCManagement({ initialPOCs = [] }: POCProps) {
       const result = await deletePOC(formData);
 
       if (result.ok) {
-        setSuccess('POC deleted successfully');
+        setSuccess('Point de contact supprimé avec succès');
         setDeletePOCDialog(null);
         await refreshPOCs();
         setTimeout(() => setSuccess(''), 3000);
       } else {
-        setError(result.error || 'Failed to delete POC');
+        setError(result.error || 'Échec de la suppression du point de contact');
       }
     } catch {
-      setError('An error occurred. Please try again.');
+      setError('Une erreur s\'est produite. Veuillez réessayer.');
     } finally {
       setIsLoading(false);
     }
@@ -198,9 +198,9 @@ export default function POCManagement({ initialPOCs = [] }: POCProps) {
 
   // Format date for display
   const formatDate = (dateString: string | null | undefined): string => {
-    if (!dateString) return 'N/A';
+    if (!dateString) return 'N/D';
     try {
-      return new Date(dateString).toLocaleDateString('en-GB', {
+      return new Date(dateString).toLocaleDateString('fr-FR', {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
@@ -228,13 +228,13 @@ export default function POCManagement({ initialPOCs = [] }: POCProps) {
       <section>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-xl font-semibold">Points of Contact</h2>
+            <h2 className="text-xl font-semibold">Points de contact</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Manage points of contact used in entries
+              Gérez les points de contact utilisés dans les entrées
             </p>
           </div>
           <Button onClick={handleCreatePOC}>
-            Add POC
+            Ajouter un point de contact
           </Button>
         </div>
 
@@ -242,11 +242,11 @@ export default function POCManagement({ initialPOCs = [] }: POCProps) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Phone</TableHead>
+              <TableHead>Nom</TableHead>
+              <TableHead>Rôle</TableHead>
+              <TableHead>Téléphone</TableHead>
               <TableHead>Email</TableHead>
-              <TableHead>Created</TableHead>
+              <TableHead>Créé</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -254,7 +254,7 @@ export default function POCManagement({ initialPOCs = [] }: POCProps) {
             {pocs.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center text-muted-foreground">
-                  No points of contact found. Click &quot;Add POC&quot; to create one.
+                  Aucun point de contact trouvé. Cliquez sur &quot;Ajouter un point de contact&quot; pour en créer un.
                 </TableCell>
               </TableRow>
             ) : (
@@ -272,7 +272,7 @@ export default function POCManagement({ initialPOCs = [] }: POCProps) {
                         size="icon"
                         onClick={() => handleEditPOC(poc)}
                         className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-                        aria-label="Edit POC"
+                        aria-label="Modifier le point de contact"
                       >
                         <Pencil />
                       </Button>
@@ -281,7 +281,7 @@ export default function POCManagement({ initialPOCs = [] }: POCProps) {
                         size="icon"
                         onClick={() => handleDeletePOC(poc)}
                         className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
-                        aria-label="Delete POC"
+                        aria-label="Supprimer le point de contact"
                       >
                         <Trash2 />
                       </Button>
@@ -298,7 +298,7 @@ export default function POCManagement({ initialPOCs = [] }: POCProps) {
       <Dialog open={isPOCModalOpen} onOpenChange={(open) => !isLoading && setIsPOCModalOpen(open)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingPOC ? 'Edit Point of Contact' : 'Add Point of Contact'}</DialogTitle>
+            <DialogTitle>{editingPOC ? 'Modifier le point de contact' : 'Ajouter un point de contact'}</DialogTitle>
           </DialogHeader>
           <form onSubmit={pocForm.handleSubmit(onPOCSubmit)}>
             <div className="space-y-4 py-4">
@@ -307,12 +307,12 @@ export default function POCManagement({ initialPOCs = [] }: POCProps) {
                 control={pocForm.control}
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor={field.name}>Name *</FieldLabel>
+                    <FieldLabel htmlFor={field.name}>Nom *</FieldLabel>
                     <Input
                       {...field}
                       id={field.name}
                       aria-invalid={fieldState.invalid}
-                      placeholder="e.g., John Smith"
+                      placeholder="ex. Jean Dupont"
                     />
                     {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                   </Field>
@@ -323,12 +323,12 @@ export default function POCManagement({ initialPOCs = [] }: POCProps) {
                 control={pocForm.control}
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor={field.name}>Role</FieldLabel>
+                    <FieldLabel htmlFor={field.name}>Rôle</FieldLabel>
                     <Input
                       {...field}
                       id={field.name}
                       aria-invalid={fieldState.invalid}
-                      placeholder="e.g., Event Coordinator"
+                      placeholder="ex. Coordinateur d'événements"
                     />
                     {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                   </Field>
@@ -339,13 +339,13 @@ export default function POCManagement({ initialPOCs = [] }: POCProps) {
                 control={pocForm.control}
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor={field.name}>Phone Number</FieldLabel>
+                    <FieldLabel htmlFor={field.name}>Numéro de téléphone</FieldLabel>
                     <Input
                       {...field}
                       id={field.name}
                       type="tel"
                       aria-invalid={fieldState.invalid}
-                      placeholder="e.g., +32 123 456 789"
+                      placeholder="ex. +32 123 456 789"
                     />
                     {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                   </Field>
@@ -362,7 +362,7 @@ export default function POCManagement({ initialPOCs = [] }: POCProps) {
                       id={field.name}
                       type="email"
                       aria-invalid={fieldState.invalid}
-                      placeholder="e.g., john@example.com"
+                      placeholder="ex. jean@exemple.com"
                     />
                     {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                   </Field>
@@ -376,10 +376,10 @@ export default function POCManagement({ initialPOCs = [] }: POCProps) {
                 onClick={() => setIsPOCModalOpen(false)}
                 disabled={isLoading}
               >
-                Cancel
+                Annuler
               </Button>
               <Button type="submit" disabled={isLoading}>
-                {isLoading ? 'Saving...' : editingPOC ? 'Update POC' : 'Create POC'}
+                {isLoading ? 'Enregistrement...' : editingPOC ? 'Mettre à jour le point de contact' : 'Créer le point de contact'}
               </Button>
             </DialogFooter>
           </form>
@@ -390,19 +390,19 @@ export default function POCManagement({ initialPOCs = [] }: POCProps) {
       <AlertDialog open={!!deletePOCDialog} onOpenChange={(open) => !open && setDeletePOCDialog(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Point of Contact</AlertDialogTitle>
+            <AlertDialogTitle>Supprimer le point de contact</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete &quot;{deletePOCDialog?.name}&quot;? This action cannot be undone.
+              Êtes-vous sûr de vouloir supprimer &quot;{deletePOCDialog?.name}&quot; ? Cette action ne peut pas être annulée.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isLoading}>Annuler</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDeletePOC}
               disabled={isLoading}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete
+              Supprimer
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

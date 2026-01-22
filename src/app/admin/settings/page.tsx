@@ -25,9 +25,9 @@ export default async function SettingsPage() {
   return (
     <div className="font-sans min-h-screen p-6 sm:p-10">
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold flex items-center gap-2"><Link href="/"><ArrowLeft /></Link> Settings</h1>
+        <h1 className="text-2xl font-semibold flex items-center gap-2"><Link href="/"><ArrowLeft /></Link> Paramètres</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Manage application settings, points of contact, and venue types
+          Gérez les paramètres de l'application, les points de contact et les types de lieu
         </p>
       </div>
 

@@ -69,6 +69,7 @@ export type Database = {
           phoneNumber: string | null
           email: string | null
           venueTypeId: number | null
+          hotelBookingId: number | null
           isTourOperator: boolean | null
           createdAt: string
           updatedAt: string
@@ -97,6 +98,7 @@ export type Database = {
           phoneNumber?: string | null
           email?: string | null
           venueTypeId?: number | null
+          hotelBookingId?: number | null
           isTourOperator?: boolean | null
           createdAt?: string
           updatedAt?: string
@@ -125,6 +127,7 @@ export type Database = {
           phoneNumber?: string | null
           email?: string | null
           venueTypeId?: number | null
+          hotelBookingId?: number | null
           isTourOperator?: boolean | null
           createdAt?: string
           updatedAt?: string
@@ -146,6 +149,12 @@ export type Database = {
             foreignKeyName: "Entry_venueTypeId_fkey"
             columns: ["venueTypeId"]
             referencedRelation: "VenueType"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "Entry_hotelBookingId_fkey"
+            columns: ["hotelBookingId"]
+            referencedRelation: "HotelBooking"
             referencedColumns: ["id"]
           }
         ]

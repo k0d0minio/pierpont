@@ -22,8 +22,8 @@ export default function SettingsClient({ initialPOCs = [], initialVenueTypes = [
       {/* Tabbed Settings Sections */}
       <Tabs defaultValue="pocs" className="w-full">
         <TabsList>
-          <TabsTrigger value="pocs">Points of Contact</TabsTrigger>
-          <TabsTrigger value="venue-types">Venue Types</TabsTrigger>
+          <TabsTrigger value="pocs">Points de contact</TabsTrigger>
+          <TabsTrigger value="venue-types">Types de lieu</TabsTrigger>
         </TabsList>
 
         {/* POC Management Section */}

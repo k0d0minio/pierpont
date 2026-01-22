@@ -5,7 +5,7 @@ import { Calendar, CalendarDayButton } from '@/components/ui/calendar'
 import { CalendarDaySidebar } from '@/components/CalendarDaySidebar'
 import { getTodayBrusselsUtc, formatYmd, parseYmd, getMonthDateRange, addDays } from '@/lib/day-utils'
 import type { Day, HotelBooking, BreakfastConfiguration, Entry } from '@/types/supabase'
-import { Circle } from 'lucide-react'
+import { Circle, Calendar as CalendarIcon } from 'lucide-react'
 import supabase from '@/lib/supabase'
 import type { DayButtonProps } from 'react-day-picker'
 
@@ -64,7 +64,7 @@ export default function HomeClient({
       
       // Filter bookings active on this day
       const dayBookings = initialHotelBookings.filter(booking => {
-        return dateStr >= booking.checkInDate && dateStr < booking.checkOutDate
+        return dateStr >= booking.checkInDate && dateStr <= booking.checkOutDate
       })
       
       // Filter breakfast configs for this day
@@ -104,7 +104,7 @@ export default function HomeClient({
         // Query days for the month
         const { data: days } = await supabase
           .from('Day')
-          .select('*, entries:Entry(*)')
+          .select('*, entries:Entry(*, venueType:VenueType(*), poc:PointOfContact(*))')
           .gte('dateISO', startDate.toISOString())
           .lte('dateISO', monthRange.endDate.toISOString())
           .order('dateISO', { ascending: true })
@@ -138,7 +138,7 @@ export default function HomeClient({
             
             // Filter bookings active on this day
             const dayBookings = (hotelBookings || []).filter(booking => {
-              return dateStr >= booking.checkInDate && dateStr < booking.checkOutDate
+              return dateStr >= booking.checkInDate && dateStr <= booking.checkOutDate
             })
             
             // Filter breakfast configs for this day
@@ -161,7 +161,7 @@ export default function HomeClient({
             const checkOut = new Date(booking.checkOutDate)
             let currentDate = new Date(checkIn)
             
-            while (currentDate < checkOut) {
+            while (currentDate <= checkOut) {
               const dateStr = formatYmd(currentDate)
               if (!monthMap.has(dateStr) && currentDate >= startDate && currentDate <= monthRange.endDate) {
                 monthMap.set(dateStr, {
@@ -178,13 +178,25 @@ export default function HomeClient({
         }
 
         setExpandedMonthData(monthMap)
+        
+        // If selected date is in this month, refresh its data
+        if (selectedDate) {
+          const selectedDateStr = formatYmd(selectedDate)
+          const selectedData = monthMap.get(selectedDateStr)
+          if (selectedData) {
+            setSelectedDateData(selectedData)
+          } else {
+            // Date not in month, clear it to trigger refetch
+            setSelectedDateData(null)
+          }
+        }
       } catch (error) {
         console.error('Error fetching month data:', error)
       }
     }
 
     fetchMonthData()
-  }, [currentMonth])
+  }, [currentMonth, selectedDate])
 
   // Check if a date has items (for dot indicator)
   const dateHasItems = useMemo(() => {
@@ -204,7 +216,7 @@ export default function HomeClient({
       
       // Fallback: check initial data (for dates outside fetched months)
       const hasOverlappingBooking = initialHotelBookings.some(booking => {
-        return dateStr >= booking.checkInDate && dateStr < booking.checkOutDate
+        return dateStr >= booking.checkInDate && dateStr <= booking.checkOutDate
       })
       
       const hasBreakfast = initialBreakfastConfigs.some(config => config.breakfastDate === dateStr)
@@ -256,7 +268,7 @@ export default function HomeClient({
           .from('HotelBooking')
           .select('*, breakfastConfigurations:BreakfastConfiguration(*)')
           .lte('checkInDate', dateStr)
-          .gt('checkOutDate', dateStr)
+          .gte('checkOutDate', dateStr)
           .order('checkInDate', { ascending: true })
 
         // Query breakfast configurations for this day
@@ -309,21 +321,113 @@ export default function HomeClient({
 
   const handleDataChange = () => {
     // Refresh data when sidebar makes changes
+    // Clear all caches and trigger refetch
+    setExpandedMonthData(new Map())
+    
     if (selectedDate) {
-      const dateStr = formatYmd(selectedDate)
-      // Remove from cache to force refetch
-      dayDataMap.delete(dateStr)
-      // Trigger refetch by updating selected date
+      // Clear the selected date data to force refetch
+      setSelectedDateData(null)
+      // Trigger refetch by updating selected date (creates new Date object)
       setSelectedDate(new Date(selectedDate))
     }
+    
+    // Refetch current month data
+    const fetchMonthData = async () => {
+      const monthRange = getMonthDateRange(currentMonth)
+      const todayUtc = getTodayBrusselsUtc()
+      const startDate = monthRange.startDate < todayUtc ? todayUtc : monthRange.startDate
+      const startDateStr = startDate.toISOString().split('T')[0]
+      const endDateStr = monthRange.endDate.toISOString().split('T')[0]
+
+      try {
+        // Query days for the month
+        const { data: days } = await supabase
+          .from('Day')
+          .select('*, entries:Entry(*, venueType:VenueType(*), poc:PointOfContact(*))')
+          .gte('dateISO', startDate.toISOString())
+          .lte('dateISO', monthRange.endDate.toISOString())
+          .order('dateISO', { ascending: true })
+
+        // Query hotel bookings that overlap with the month range
+        const { data: hotelBookings } = await supabase
+          .from('HotelBooking')
+          .select('*')
+          .lt('checkInDate', addDays(monthRange.endDate, 1).toISOString().split('T')[0])
+          .gt('checkOutDate', startDateStr)
+          .order('checkInDate', { ascending: true })
+
+        // Query breakfast configurations for the month range
+        const { data: breakfastConfigs } = await supabase
+          .from('BreakfastConfiguration')
+          .select('*')
+          .gte('breakfastDate', startDateStr)
+          .lte('breakfastDate', endDateStr)
+
+        // Build map of date strings to day data
+        const monthMap = new Map<string, DayData>()
+        
+        days?.forEach((day) => {
+          const dateStr = day.dateISO.split('T')[0]
+          const entries = day.entries || []
+          
+          const golfEntries = entries.filter(e => e.type === 'golf')
+          const eventEntries = entries.filter(e => e.type === 'event')
+          const reservationEntries = entries.filter(e => e.type === 'reservation')
+          
+          // Filter bookings active on this day
+          const dayBookings = (hotelBookings || []).filter(booking => {
+            return dateStr >= booking.checkInDate && dateStr <= booking.checkOutDate
+          })
+          
+          // Filter breakfast configs for this day
+          const dayBreakfastConfigs = (breakfastConfigs || []).filter(config => config.breakfastDate === dateStr)
+          
+          monthMap.set(dateStr, {
+            hotelBookings: dayBookings,
+            breakfastConfigs: dayBreakfastConfigs,
+            golfEntries,
+            eventEntries,
+            reservationEntries
+          })
+        })
+        
+        setExpandedMonthData(monthMap)
+      } catch (error) {
+        console.error('Error refreshing month data:', error)
+      }
+    }
+    
+    fetchMonthData()
+  }
+
+  // Format date for display
+  const formatDateDisplay = (date: Date): string => {
+    return new Intl.DateTimeFormat('fr-FR', {
+      timeZone: 'Europe/Brussels',
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    }).format(date)
   }
 
   return (
-    <div className="flex flex-col min-h-0 w-full">
+    <div className="flex flex-col h-full w-full">
       {/* Calendar and Sidebar Layout */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_700px] gap-4 min-h-0 lg:h-[calc(100vh-10rem)]">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_750px] min-h-0 h-full">
         {/* Calendar Section */}
-        <div className="flex items-start justify-start overflow-auto pb-4 lg:pb-0">
+        <div className="flex flex-col items-center justify-center overflow-auto pl-0 pr-8 lg:pr-12 py-8 lg:py-12 lg:min-h-full">
+          {/* Date Title */}
+          {selectedDate && (
+            <div className="mb-8 px-2">
+              <div className="flex items-center gap-3">
+                <CalendarIcon className="h-7 w-7 text-zinc-600 dark:text-zinc-400" />
+                <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100">
+                  {formatDateDisplay(selectedDate)}
+                </h1>
+              </div>
+            </div>
+          )}
           <Calendar
             mode="single"
             selected={selectedDate}
@@ -339,10 +443,10 @@ export default function HomeClient({
               // Disable dates before today (but allow today)
               return date < todayUtc
             }}
-            className="[--cell-size:--spacing(12)] md:[--cell-size:--spacing(14)] lg:[--cell-size:--spacing(16)]"
+            className="[--cell-size:--spacing(16)] md:[--cell-size:--spacing(20)] lg:[--cell-size:--spacing(24)]"
             formatters={{
               formatMonthDropdown: (date) => {
-                return date.toLocaleString("default", { month: "long" })
+                return date.toLocaleString("fr-FR", { month: "long" })
               },
             }}
             components={{
@@ -352,11 +456,11 @@ export default function HomeClient({
         </div>
 
         {/* Sidebar Section - Hidden on mobile, shown below calendar on tablet, side-by-side on desktop */}
-        <div className="lg:block border-t lg:border-t-0 lg:border-l border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 overflow-hidden shadow-sm">
+        <div className="lg:block bg-white dark:bg-zinc-900 overflow-hidden lg:h-full">
           {isLoadingDayData ? (
             <div className="h-full min-h-[400px] lg:min-h-0 flex items-center justify-center">
               <div className="text-center py-8 text-zinc-500 dark:text-zinc-400">
-                Loading...
+                Chargement...
               </div>
             </div>
           ) : selectedDateData ? (
