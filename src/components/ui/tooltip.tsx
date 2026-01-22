@@ -78,12 +78,17 @@ function TooltipTrigger({
 
   // On mobile, handle click to toggle tooltip
   if (isTouch && context && React.isValidElement(props.children)) {
+    const childElement = props.children as React.ReactElement<{ 
+      onClick?: (e: React.MouseEvent | React.TouchEvent) => void
+      onTouchEnd?: (e: React.TouchEvent) => void
+    }>
+    
     const handleClick = (e: React.MouseEvent | React.TouchEvent) => {
       // Toggle tooltip state
       context.setOpen(!context.open)
       
       // Preserve original onClick handler if it exists
-      const originalOnClick = (props.children as React.ReactElement).props?.onClick
+      const originalOnClick = childElement.props?.onClick
       if (originalOnClick) {
         originalOnClick(e)
       }
@@ -96,7 +101,7 @@ function TooltipTrigger({
         asChild
         {...props}
       >
-        {React.cloneElement(props.children as React.ReactElement, {
+        {React.cloneElement(childElement, {
           onClick: handleClick,
           onTouchEnd: handleClick,
         })}
