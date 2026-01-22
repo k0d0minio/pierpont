@@ -27,7 +27,7 @@ export default async function SettingsPage() {
       <div className="mb-6">
         <h1 className="text-2xl font-semibold flex items-center gap-2"><Link href="/"><ArrowLeft /></Link> Paramètres</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Gérez les paramètres de l'application, les points de contact et les types de lieu
+          Gérez les paramètres de l&apos;application, les points de contact et les types de lieu
         </p>
       </div>
 

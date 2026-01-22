@@ -421,7 +421,7 @@ export default function DayViewClient({
               <div className="flex items-center gap-3">
                 <Building className="h-5 w-5 text-zinc-600 dark:text-zinc-400" />
                 <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-                  Réservations d'hôtel
+                  Réservations d&apos;hôtel
                 </h2>
                 <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
                   {totalHotelGuests}
@@ -432,7 +432,7 @@ export default function DayViewClient({
                 variant="default"
                 className="text-sm whitespace-nowrap"
               >
-                Ajouter une réservation d'hôtel
+                Ajouter une réservation d&apos;hôtel
               </Button>
             </div>
 
@@ -575,7 +575,7 @@ export default function DayViewClient({
             ) : (
               <div className="text-center py-8 text-zinc-500 dark:text-zinc-400">
                 <Building className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                <p>Aucune réservation d'hôtel pour cette date</p>
+                <p>Aucune réservation d&apos;hôtel pour cette date</p>
               </div>
             )}
           </section>
@@ -690,11 +690,11 @@ export default function DayViewClient({
                 deleteType === 'breakfast'
                   ? 'configuration de petit-déjeuner'
                   : deleteType === 'booking'
-                    ? 'réservation d\'hôtel'
+                    ? 'réservation d&apos;hôtel'
                     : deleteType === 'golf'
                       ? 'entrée de golf'
                       : deleteType === 'event'
-                        ? 'entrée d\'événement'
+                        ? 'entrée d&apos;événement'
                         : deleteType === 'reservation'
                           ? 'entrée de réservation'
                           : (entryToDelete?.type || deleteType) + ' entrée'

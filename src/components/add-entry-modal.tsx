@@ -280,7 +280,7 @@ export function AddEntryModal({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="guestName" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                Nom de l'invité *
+                Nom de l&apos;invité *
               </Label>
               <Input
                 id="guestName"
@@ -294,7 +294,7 @@ export function AddEntryModal({
             </div>
             <div>
               <Label htmlFor="guestCount" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                Nombre d'invités
+                Nombre d&apos;invités
               </Label>
               <Input
                 id="guestCount"
@@ -611,7 +611,7 @@ export function AddEntryModal({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="guestName" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  Nom de l'invité *
+                  Nom de l&apos;invité *
                 </Label>
                 <Input
                   id="guestName"
@@ -653,7 +653,7 @@ export function AddEntryModal({
               </div>
               <div>
                 <Label htmlFor="guestCount" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  Nombre d'invités
+                  Nombre d&apos;invités
                 </Label>
                 <Input
                   id="guestCount"
@@ -700,9 +700,9 @@ export function AddEntryModal({
         <DrawerHeader>
           <DrawerTitle>{getTitle()}</DrawerTitle>
           <DrawerDescription>
-            {effectiveEntryType === 'golf' ? 'Ajouter ou modifier les détails de l\'entrée de golf' :
-              effectiveEntryType === 'event' ? 'Ajouter ou modifier les détails de l\'événement' :
-                'Ajouter ou modifier les détails de l\'entrée'}
+            {effectiveEntryType === 'golf' ? 'Ajouter ou modifier les détails de l&apos;entrée de golf' :
+              effectiveEntryType === 'event' ? 'Ajouter ou modifier les détails de l&apos;événement' :
+                'Ajouter ou modifier les détails de l&apos;entrée'}
           </DrawerDescription>
         </DrawerHeader>
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
@@ -715,7 +715,7 @@ export function AddEntryModal({
                 {!isEditMode && (effectiveEntryType === 'golf' || effectiveEntryType === 'event' || !effectiveEntryType) && (
                   <div>
                     <Label htmlFor="entryType" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                      Type d'entrée *
+                      Type d&apos;entrée *
                     </Label>
                     <Select
                       value={selectedEntryType || ''}
@@ -812,7 +812,7 @@ export function AddEntryModal({
               Annuler
             </Button>
             <Button type="submit" variant="default" disabled={isSubmitting || !effectiveEntryType}>
-              {isSubmitting ? (isEditMode ? 'Mise à jour...' : 'Ajout...') : (isEditMode ? 'Mettre à jour l\'entrée' : 'Ajouter l\'entrée')}
+              {isSubmitting ? (isEditMode ? 'Mise à jour...' : 'Ajout...') : (isEditMode ? 'Mettre à jour l&apos;entrée' : 'Ajouter l&apos;entrée')}
             </Button>
           </DrawerFooter>
         </form>
@@ -946,7 +946,7 @@ export function AddEntryModal({
                   className="w-full"
                 />
                 <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-                  Le code est généré automatiquement à partir du nom s'il n'est pas fourni.
+                  Le code est généré automatiquement à partir du nom s&apos;il n&apos;est pas fourni.
                 </p>
               </div>
             </div>

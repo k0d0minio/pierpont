@@ -382,7 +382,7 @@ export function CalendarDaySidebar({
                 </div>
                 <div>
                   <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-                    Réservations d'hôtel
+                    Réservations d&apos;hôtel
                   </h2>
                   <p className="text-sm text-zinc-500 dark:text-zinc-400">
                     {totalHotelGuests} invité{totalHotelGuests !== 1 ? 's' : ''}
@@ -598,7 +598,7 @@ export function CalendarDaySidebar({
             ) : (
               <div className="text-center py-16 text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl border border-dashed border-zinc-200 dark:border-zinc-700">
                 <Building className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                <p className="text-base font-medium">Aucune réservation d'hôtel pour cette date</p>
+                <p className="text-base font-medium">Aucune réservation d&apos;hôtel pour cette date</p>
               </div>
             )}
           </section>
@@ -736,11 +736,11 @@ export function CalendarDaySidebar({
                 deleteType === 'breakfast'
                   ? 'configuration de petit-déjeuner'
                   : deleteType === 'booking'
-                    ? 'réservation d\'hôtel'
+                    ? 'réservation d&apos;hôtel'
                     : deleteType === 'golf'
                       ? 'entrée de golf'
                       : deleteType === 'event'
-                        ? 'entrée d\'événement'
+                        ? 'entrée d&apos;événement'
                         : deleteType === 'reservation'
                           ? 'entrée de réservation'
                           : (entryToDelete?.type || deleteType) + ' entrée'

@@ -66,7 +66,7 @@ export default function AdminLogin() {
             Accès administrateur
           </h1>
           <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-            Entrez le mot de passe administrateur pour accéder aux fonctionnalités d'édition
+            Entrez le mot de passe administrateur pour accéder aux fonctionnalités d&apos;édition
           </p>
         </div>
 

@@ -635,9 +635,9 @@ export function AddHotelBookingDrawer({
     <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DrawerContent className="max-h-[90vh] flex flex-col">
         <DrawerHeader>
-          <DrawerTitle>{isEditMode ? 'Modifier la réservation d\'hôtel' : 'Ajouter une réservation d\'hôtel'}</DrawerTitle>
+          <DrawerTitle>{isEditMode ? 'Modifier la réservation d&apos;hôtel' : 'Ajouter une réservation d&apos;hôtel'}</DrawerTitle>
           <DrawerDescription>
-            Configurez la réservation d'hôtel et les paramètres quotidiens de petit-déjeuner et de réservation
+            Configurez la réservation d&apos;hôtel et les paramètres quotidiens de petit-déjeuner et de réservation
           </DrawerDescription>
         </DrawerHeader>
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
@@ -650,7 +650,7 @@ export function AddHotelBookingDrawer({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="guestName" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                        Nom de l'invité *
+                        Nom de l&apos;invité *
                       </Label>
                       <Input 
                         id="guestName"
@@ -664,7 +664,7 @@ export function AddHotelBookingDrawer({
                     </div>
                     <div>
                       <Label htmlFor="guestCount" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                        Nombre d'invités
+                          Nombre d&apos;invités
                       </Label>
                       <Input 
                         id="guestCount"
@@ -984,11 +984,11 @@ export function AddHotelBookingDrawer({
                     <TabsContent value="reservation" className="space-y-4 mt-4">
                       <div>
                         <Label className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3 block">
-                          Nombre d'invités
+                          Nombre d&apos;invités
                         </Label>
                         {(!reservationConfig || reservationConfig.guestCount === 0) ? (
                           <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-4">
-                            Aucune réservation configurée. Utilisez les boutons ci-dessous pour définir le nombre d'invités.
+                            Aucune réservation configurée. Utilisez les boutons ci-dessous pour définir le nombre d&apos;invités.
                           </p>
                         ) : (
                           <div className="flex items-center gap-3 p-4 border rounded-lg bg-zinc-50 dark:bg-zinc-900/50">

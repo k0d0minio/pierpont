@@ -333,7 +333,7 @@ export default function VenueManagement({ initialVenueTypes = [] }: VenueProps) 
                       }}
                     />
                     <FieldDescription>
-                      Le code est généré automatiquement à partir du nom s'il n'est pas fourni. Utilisé en interne pour les références.
+                      Le code est généré automatiquement à partir du nom s&apos;il n&apos;est pas fourni. Utilisé en interne pour les références.
                     </FieldDescription>
                     {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                   </Field>

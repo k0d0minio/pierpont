@@ -106,7 +106,7 @@ export function DayCard({ day, entries, hotelBookings = [], breakfastConfigs = [
           </div>
           
           <div className="flex items-center justify-between">
-            <span className="text-xs text-zinc-600 dark:text-zinc-400">Invités d'hôtel</span>
+            <span className="text-xs text-zinc-600 dark:text-zinc-400">Invités d&apos;hôtel</span>
             <span className="text-xs font-medium text-zinc-900 dark:text-zinc-100">
               {totalHotelGuests > 0 ? totalHotelGuests : "—"}
             </span>
