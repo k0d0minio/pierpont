@@ -108,7 +108,7 @@ export function getMonthDateRange(startDate: Date): MonthDateRange {
   
   // Generate all dates in the month
   const dates: Date[] = []
-  let current = new Date(firstDay)
+  const current = new Date(firstDay)
   while (current <= lastDay) {
     dates.push(new Date(current))
     current.setUTCDate(current.getUTCDate() + 1)
@@ -143,18 +143,16 @@ export function isPastDate(date: Date): boolean {
 }
 
 /**
- * Normalize a Date object to UTC midnight
+ * Normalize a Date object to UTC midnight based on Brussels timezone
  * This is useful when receiving Date objects from calendar components that may be in local timezone
  * @param date - Date object (may be in local timezone)
- * @returns Date object at UTC midnight
+ * @returns Date object at UTC midnight representing the same date in Brussels timezone
  */
 export function normalizeToUtcMidnight(date: Date): Date {
-  // Get the local date components
-  const year = date.getFullYear()
-  const month = date.getMonth()
-  const day = date.getDate()
+  // Get the Brussels date components (not local timezone)
+  const brusselsYmd = getBrusselsYmd(date)
   // Create a new Date at UTC midnight with those components
-  return new Date(Date.UTC(year, month, day, 0, 0, 0, 0))
+  return dateFromYmdUtc(brusselsYmd)
 }
 
 /**

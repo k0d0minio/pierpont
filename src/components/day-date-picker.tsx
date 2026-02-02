@@ -15,7 +15,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { CalendarIcon } from "lucide-react"
-import { parseYmd, formatYmd, getTodayBrusselsUtc, isPastDate, addDays } from "@/lib/day-utils"
+import { parseYmd, formatYmd, getTodayBrusselsUtc, isPastDate, addDays, normalizeToUtcMidnight } from "@/lib/day-utils"
 import { ensureDayExists } from "@/app/actions/days"
 
 type DayDatePickerProps = {
@@ -59,24 +59,27 @@ export function DayDatePicker({ dateParam }: DayDatePickerProps) {
   const handleDateSelect = async (selectedDate: Date | undefined) => {
     if (!selectedDate) return
 
+    // Normalize the date from calendar (which may be in local timezone) to Brussels UTC
+    const normalizedDate = normalizeToUtcMidnight(selectedDate)
+
     // Validate date constraints
-    if (isPastDate(selectedDate)) {
+    if (isPastDate(normalizedDate)) {
       // Don't allow past dates
       return
     }
 
-    if (selectedDate > oneYearFromToday) {
+    if (normalizedDate > oneYearFromToday) {
       // Don't allow dates beyond 1 year
       return
     }
 
-    setDate(selectedDate)
-    setValue(formatDateForDisplay(selectedDate))
+    setDate(normalizedDate)
+    setValue(formatDateForDisplay(normalizedDate))
     setOpen(false)
 
     // Ensure day exists and navigate
-    const newDateParam = formatYmd(selectedDate)
-    await ensureDayExists(selectedDate.toISOString())
+    const newDateParam = formatYmd(normalizedDate)
+    await ensureDayExists(normalizedDate.toISOString())
     router.push(`/day/${newDateParam}`)
   }
 
@@ -87,12 +90,8 @@ export function DayDatePicker({ dateParam }: DayDatePickerProps) {
     // Try to parse the input as a date
     const parsedDate = new Date(inputValue)
     if (isValidDate(parsedDate)) {
-      const utcDate = new Date(Date.UTC(
-        parsedDate.getFullYear(),
-        parsedDate.getMonth(),
-        parsedDate.getDate(),
-        0, 0, 0, 0
-      ))
+      // Normalize to Brussels UTC to avoid timezone issues
+      const utcDate = normalizeToUtcMidnight(parsedDate)
       
       // Validate constraints
       if (!isPastDate(utcDate) && utcDate <= oneYearFromToday) {

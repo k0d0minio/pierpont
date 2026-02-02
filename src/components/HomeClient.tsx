@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { Calendar, CalendarDayButton } from '@/components/ui/calendar'
 import { CalendarDaySidebar } from '@/components/CalendarDaySidebar'
-import { getTodayBrusselsUtc, formatYmd, parseYmd, getMonthDateRange, addDays } from '@/lib/day-utils'
+import { getTodayBrusselsUtc, formatYmd, parseYmd, getMonthDateRange, addDays, normalizeToUtcMidnight } from '@/lib/day-utils'
 import type { Day, HotelBooking, BreakfastConfiguration, Entry } from '@/types/supabase'
 import { Circle, Calendar as CalendarIcon } from 'lucide-react'
 import supabase from '@/lib/supabase'
@@ -157,8 +157,9 @@ export default function HomeClient({
         // Also check for bookings that overlap but don't have days created yet
         if (hotelBookings) {
           hotelBookings.forEach(booking => {
-            const checkIn = new Date(booking.checkInDate)
-            const checkOut = new Date(booking.checkOutDate)
+            // Use parseYmd instead of new Date() to avoid timezone issues
+            const checkIn = parseYmd(booking.checkInDate)
+            const checkOut = parseYmd(booking.checkOutDate)
             let currentDate = new Date(checkIn)
             
             while (currentDate <= checkOut) {
@@ -172,7 +173,8 @@ export default function HomeClient({
                   reservationEntries: []
                 })
               }
-              currentDate = new Date(currentDate.getTime() + 24 * 60 * 60 * 1000)
+              // Use addDays instead of manual millisecond addition
+              currentDate = addDays(currentDate, 1)
             }
           })
         }
@@ -201,7 +203,9 @@ export default function HomeClient({
   // Check if a date has items (for dot indicator)
   const dateHasItems = useMemo(() => {
     return (date: Date): boolean => {
-      const dateStr = formatYmd(date)
+      // Normalize the date from calendar (local timezone) to Brussels UTC
+      const normalizedDate = normalizeToUtcMidnight(date)
+      const dateStr = formatYmd(normalizedDate)
       const data = dayDataMap.get(dateStr)
       
       if (data) {
@@ -316,7 +320,12 @@ export default function HomeClient({
   }, [selectedDate, dayDataMap])
 
   const handleDateSelect = (date: Date | undefined) => {
-    setSelectedDate(date)
+    // Normalize the date from calendar (which may be in local timezone) to Brussels UTC
+    if (date) {
+      setSelectedDate(normalizeToUtcMidnight(date))
+    } else {
+      setSelectedDate(undefined)
+    }
   }
 
   const handleDataChange = () => {
