@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import type { Tables } from '@/types/supabase'
-import type { EntryWithRelations } from '@/types/components'
+import type { ProgramItemWithRelations } from '@/types/components'
 
 // Helper functions for date formatting
 function weekdayNameBrussels(date: Date): string {
@@ -27,7 +27,8 @@ function formatYmd(date: Date): string {
 
 interface DayCardProps {
   day: Tables<'Day'>;
-  entries?: EntryWithRelations[];
+  /** Program items (golf/event) for this day */
+  entries?: ProgramItemWithRelations[];
   hotelBookings?: Tables<'HotelBooking'>[];
   breakfastConfigs?: Tables<'BreakfastConfiguration'>[];
 }
@@ -106,7 +107,7 @@ export function DayCard({ day, entries, hotelBookings = [], breakfastConfigs = [
           </div>
           
           <div className="flex items-center justify-between">
-            <span className="text-xs text-zinc-600 dark:text-zinc-400">Invités d&apos;hôtel</span>
+            <span className="text-xs text-zinc-600 dark:text-zinc-400">{"Invités d'hôtel"}</span>
             <span className="text-xs font-medium text-zinc-900 dark:text-zinc-100">
               {totalHotelGuests > 0 ? totalHotelGuests : "—"}
             </span>

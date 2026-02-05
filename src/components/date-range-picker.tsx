@@ -12,7 +12,7 @@ import {
 import { format } from "date-fns"
 import { CalendarIcon } from "lucide-react"
 import type { DateRange } from "react-day-picker"
-import { formatYmd, normalizeToUtcMidnight } from "@/lib/day-utils"
+import { formatYmd, normalizeToUtcMidnight, getTodayBrusselsUtc, isPastDate } from "@/lib/day-utils"
 
 // Note: parseYmd is not needed here as we receive Date objects from the calendar
 
@@ -41,6 +41,7 @@ export function DateRangePicker({
   className,
   disabled = false,
 }: DateRangePickerProps) {
+  const effectiveMinDate = minDate ?? getTodayBrusselsUtc()
   const [date, setDate] = React.useState<DateRange | undefined>(value)
 
   React.useEffect(() => {
@@ -48,13 +49,15 @@ export function DateRangePicker({
   }, [value])
 
   const handleSelect = (selectedDate: DateRange | undefined) => {
-    // Normalize dates to UTC midnight to avoid timezone issues
-    const normalizedDate: DateRange | undefined = selectedDate
-      ? {
-          from: selectedDate.from ? normalizeToUtcMidnight(selectedDate.from) : undefined,
-          to: selectedDate.to ? normalizeToUtcMidnight(selectedDate.to) : undefined,
-        }
-      : undefined
+    if (!selectedDate) {
+      setDate(undefined)
+      onChange?.(undefined)
+      return
+    }
+    const from = selectedDate.from ? normalizeToUtcMidnight(selectedDate.from) : undefined
+    const to = selectedDate.to ? normalizeToUtcMidnight(selectedDate.to) : undefined
+    if (from && from < effectiveMinDate) return
+    const normalizedDate: DateRange = { from, to }
     setDate(normalizedDate)
     onChange?.(normalizedDate)
   }
@@ -104,8 +107,8 @@ export function DateRangePicker({
             selected={date}
             onSelect={handleSelect}
             numberOfMonths={2}
-            disabled={disabled}
-            {...(minDate && { fromDate: minDate })}
+            disabled={disabled ? true : (d) => isPastDate(normalizeToUtcMidnight(d))}
+            fromDate={effectiveMinDate}
             {...(maxDate && { toDate: maxDate })}
           />
         </PopoverContent>

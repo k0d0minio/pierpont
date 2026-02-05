@@ -3,14 +3,16 @@
 import { useState, useMemo, useEffect } from 'react'
 import { Calendar, CalendarDayButton } from '@/components/ui/calendar'
 import { CalendarDaySidebar } from '@/components/CalendarDaySidebar'
-import { getTodayBrusselsUtc, formatYmd, parseYmd, getMonthDateRange, addDays, normalizeToUtcMidnight } from '@/lib/day-utils'
-import type { Day, HotelBooking, BreakfastConfiguration, Entry } from '@/types/supabase'
+import { getTodayBrusselsUtc, formatYmd, parseYmd, getMonthDateRange, addDays, normalizeToUtcMidnight, isPastDate } from '@/lib/day-utils'
+import type { Day, HotelBooking, BreakfastConfiguration, Reservation } from '@/types/supabase'
+import type { ProgramItemWithRelations } from '@/types/components'
 import { Circle, Calendar as CalendarIcon } from 'lucide-react'
 import supabase from '@/lib/supabase'
 import type { DayButtonProps } from 'react-day-picker'
 
 type DayWithEntries = Day & {
-  entries?: Entry[];
+  programItems?: ProgramItemWithRelations[];
+  reservations?: Reservation[];
 }
 
 type HomeClientProps = {
@@ -25,9 +27,9 @@ type HomeClientProps = {
 type DayData = {
   hotelBookings: HotelBooking[];
   breakfastConfigs: BreakfastConfiguration[];
-  golfEntries: Entry[];
-  eventEntries: Entry[];
-  reservationEntries: Entry[];
+  golfEntries: ProgramItemWithRelations[];
+  eventEntries: ProgramItemWithRelations[];
+  reservationEntries: (Reservation & { type: 'reservation' })[];
 }
 
 
@@ -53,32 +55,23 @@ export default function HomeClient({
   // Create a map of date strings to day data for quick lookup (initial month)
   const initialDayDataMap = useMemo(() => {
     const map = new Map<string, DayData>()
-    
     initialDays.forEach((day) => {
       const dateStr = day.dateISO.split('T')[0]
-      const entries = day.entries || []
-      
-      const golfEntries = entries.filter(e => e.type === 'golf')
-      const eventEntries = entries.filter(e => e.type === 'event')
-      const reservationEntries = entries.filter(e => e.type === 'reservation')
-      
-      // Filter bookings active on this day
-      const dayBookings = initialHotelBookings.filter(booking => {
-        return dateStr >= booking.checkInDate && dateStr <= booking.checkOutDate
-      })
-      
-      // Filter breakfast configs for this day
-      const dayBreakfastConfigs = initialBreakfastConfigs.filter(config => config.breakfastDate === dateStr)
-      
+      const programItems = day.programItems || []
+      const reservations = day.reservations || []
+      const golfEntries = programItems.filter((p) => p.type === 'golf')
+      const eventEntries = programItems.filter((p) => p.type === 'event')
+      const reservationEntries = reservations.map((r) => ({ ...r, type: 'reservation' as const }))
+      const dayBookings = initialHotelBookings.filter((b) => dateStr >= b.checkInDate && dateStr <= b.checkOutDate)
+      const dayBreakfastConfigs = initialBreakfastConfigs.filter((c) => c.breakfastDate === dateStr)
       map.set(dateStr, {
         hotelBookings: dayBookings,
         breakfastConfigs: dayBreakfastConfigs,
         golfEntries,
         eventEntries,
-        reservationEntries
+        reservationEntries,
       })
     })
-    
     return map
   }, [initialDays, initialHotelBookings, initialBreakfastConfigs])
 
@@ -101,15 +94,24 @@ export default function HomeClient({
       const endDateStr = monthRange.endDate.toISOString().split('T')[0]
 
       try {
-        // Query days for the month
         const { data: days } = await supabase
           .from('Day')
-          .select('*, entries:Entry(*, venueType:VenueType(*), poc:PointOfContact(*))')
+          .select('id, dateISO, weekday, createdAt, updatedAt')
           .gte('dateISO', startDate.toISOString())
           .lte('dateISO', monthRange.endDate.toISOString())
           .order('dateISO', { ascending: true })
 
-        // Query hotel bookings that overlap with the month range
+        const dayIds = (days || []).map((d) => d.id)
+        const { data: programItems } = dayIds.length
+          ? await supabase
+              .from('ProgramItem')
+              .select('*, venueType:VenueType(*), poc:PointOfContact(*)')
+              .in('dayId', dayIds)
+          : { data: [] }
+        const { data: reservations } = dayIds.length
+          ? await supabase.from('Reservation').select('*').in('dayId', dayIds)
+          : { data: [] }
+
         const { data: hotelBookings } = await supabase
           .from('HotelBooking')
           .select('*')
@@ -117,39 +119,29 @@ export default function HomeClient({
           .gt('checkOutDate', startDateStr)
           .order('checkInDate', { ascending: true })
 
-        // Query breakfast configurations for the month range
         const { data: breakfastConfigs } = await supabase
           .from('BreakfastConfiguration')
           .select('*')
           .gte('breakfastDate', startDateStr)
           .lte('breakfastDate', endDateStr)
 
-        // Build map for this month
         const monthMap = new Map<string, DayData>()
-        
         if (days) {
           days.forEach((day) => {
             const dateStr = day.dateISO.split('T')[0]
-            const entries = day.entries || []
-            
-            const golfEntries = entries.filter((e: Entry) => e.type === 'golf')
-            const eventEntries = entries.filter((e: Entry) => e.type === 'event')
-            const reservationEntries = entries.filter((e: Entry) => e.type === 'reservation')
-            
-            // Filter bookings active on this day
-            const dayBookings = (hotelBookings || []).filter(booking => {
-              return dateStr >= booking.checkInDate && dateStr <= booking.checkOutDate
-            })
-            
-            // Filter breakfast configs for this day
-            const dayBreakfastConfigs = (breakfastConfigs || []).filter(config => config.breakfastDate === dateStr)
-            
+            const dayProgramItems = (programItems || []).filter((p) => p.dayId === day.id)
+            const dayReservations = (reservations || []).filter((r) => r.dayId === day.id)
+            const golfEntries = dayProgramItems.filter((p) => p.type === 'golf')
+            const eventEntries = dayProgramItems.filter((p) => p.type === 'event')
+            const reservationEntries = dayReservations.map((r) => ({ ...r, type: 'reservation' as const }))
+            const dayBookings = (hotelBookings || []).filter((b) => dateStr >= b.checkInDate && dateStr <= b.checkOutDate)
+            const dayBreakfastConfigs = (breakfastConfigs || []).filter((c) => c.breakfastDate === dateStr)
             monthMap.set(dateStr, {
               hotelBookings: dayBookings,
               breakfastConfigs: dayBreakfastConfigs,
               golfEntries,
               eventEntries,
-              reservationEntries
+              reservationEntries,
             })
           })
         }
@@ -282,18 +274,26 @@ export default function HomeClient({
           .eq('breakfastDate', dateStr)
           .order('startTime', { ascending: true, nullsFirst: true })
 
-        // Query entries with venue type and POC info
         const date = parseYmd(dateStr)
         const { data: day } = await supabase
           .from('Day')
-          .select('*, entries:Entry(*, venueType:VenueType(*), poc:PointOfContact(*))')
+          .select('id, dateISO')
           .eq('dateISO', date.toISOString())
           .single()
 
-        const entries = (day?.entries || []) as Entry[]
-        const golfEntries = entries.filter((e) => e.type === 'golf')
-        const eventEntries = entries.filter((e) => e.type === 'event')
-        const reservationEntries = entries.filter((e) => e.type === 'reservation')
+        const { data: programItems } = day?.id
+          ? await supabase
+              .from('ProgramItem')
+              .select('*, venueType:VenueType(*), poc:PointOfContact(*)')
+              .eq('dayId', day.id)
+          : { data: [] }
+        const { data: reservations } = day?.id
+          ? await supabase.from('Reservation').select('*').eq('dayId', day.id)
+          : { data: [] }
+
+        const golfEntries = (programItems || []).filter((p) => p.type === 'golf')
+        const eventEntries = (programItems || []).filter((p) => p.type === 'event')
+        const reservationEntries = (reservations || []).map((r) => ({ ...r, type: 'reservation' as const }))
 
         setSelectedDateData({
           hotelBookings: hotelBookings || [],
@@ -320,12 +320,13 @@ export default function HomeClient({
   }, [selectedDate, dayDataMap])
 
   const handleDateSelect = (date: Date | undefined) => {
-    // Normalize the date from calendar (which may be in local timezone) to Brussels UTC
-    if (date) {
-      setSelectedDate(normalizeToUtcMidnight(date))
-    } else {
+    if (!date) {
       setSelectedDate(undefined)
+      return
     }
+    const normalized = normalizeToUtcMidnight(date)
+    if (isPastDate(normalized)) return
+    setSelectedDate(normalized)
   }
 
   const handleDataChange = () => {
@@ -349,15 +350,24 @@ export default function HomeClient({
       const endDateStr = monthRange.endDate.toISOString().split('T')[0]
 
       try {
-        // Query days for the month
         const { data: days } = await supabase
           .from('Day')
-          .select('*, entries:Entry(*, venueType:VenueType(*), poc:PointOfContact(*))')
+          .select('id, dateISO, weekday, createdAt, updatedAt')
           .gte('dateISO', startDate.toISOString())
           .lte('dateISO', monthRange.endDate.toISOString())
           .order('dateISO', { ascending: true })
 
-        // Query hotel bookings that overlap with the month range
+        const dayIds = (days || []).map((d) => d.id)
+        const { data: programItems } = dayIds.length
+          ? await supabase
+              .from('ProgramItem')
+              .select('*, venueType:VenueType(*), poc:PointOfContact(*)')
+              .in('dayId', dayIds)
+          : { data: [] }
+        const { data: reservations } = dayIds.length
+          ? await supabase.from('Reservation').select('*').in('dayId', dayIds)
+          : { data: [] }
+
         const { data: hotelBookings } = await supabase
           .from('HotelBooking')
           .select('*')
@@ -365,38 +375,28 @@ export default function HomeClient({
           .gt('checkOutDate', startDateStr)
           .order('checkInDate', { ascending: true })
 
-        // Query breakfast configurations for the month range
         const { data: breakfastConfigs } = await supabase
           .from('BreakfastConfiguration')
           .select('*')
           .gte('breakfastDate', startDateStr)
           .lte('breakfastDate', endDateStr)
 
-        // Build map of date strings to day data
         const monthMap = new Map<string, DayData>()
-        
         days?.forEach((day) => {
           const dateStr = day.dateISO.split('T')[0]
-          const entries = day.entries || []
-          
-          const golfEntries = entries.filter(e => e.type === 'golf')
-          const eventEntries = entries.filter(e => e.type === 'event')
-          const reservationEntries = entries.filter(e => e.type === 'reservation')
-          
-          // Filter bookings active on this day
-          const dayBookings = (hotelBookings || []).filter(booking => {
-            return dateStr >= booking.checkInDate && dateStr <= booking.checkOutDate
-          })
-          
-          // Filter breakfast configs for this day
-          const dayBreakfastConfigs = (breakfastConfigs || []).filter(config => config.breakfastDate === dateStr)
-          
+          const dayProgramItems = (programItems || []).filter((p) => p.dayId === day.id)
+          const dayReservations = (reservations || []).filter((r) => r.dayId === day.id)
+          const golfEntries = dayProgramItems.filter((p) => p.type === 'golf')
+          const eventEntries = dayProgramItems.filter((p) => p.type === 'event')
+          const reservationEntries = dayReservations.map((r) => ({ ...r, type: 'reservation' as const }))
+          const dayBookings = (hotelBookings || []).filter((b) => dateStr >= b.checkInDate && dateStr <= b.checkOutDate)
+          const dayBreakfastConfigs = (breakfastConfigs || []).filter((c) => c.breakfastDate === dateStr)
           monthMap.set(dateStr, {
             hotelBookings: dayBookings,
             breakfastConfigs: dayBreakfastConfigs,
             golfEntries,
             eventEntries,
-            reservationEntries
+            reservationEntries,
           })
         })
         
@@ -442,16 +442,17 @@ export default function HomeClient({
             selected={selectedDate}
             onSelect={handleDateSelect}
             month={currentMonth}
-            onMonthChange={setCurrentMonth}
+            onMonthChange={(month) => {
+              const today = getTodayBrusselsUtc()
+              const startOfThisMonth = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1))
+              if (month >= startOfThisMonth) setCurrentMonth(month)
+            }}
             numberOfMonths={1}
             captionLayout="dropdown"
+            fromDate={todayUtc}
             fromYear={currentYear}
             toYear={maxYear}
-            disabled={(date) => {
-              const todayUtc = getTodayBrusselsUtc()
-              // Disable dates before today (but allow today)
-              return date < todayUtc
-            }}
+            disabled={(date) => isPastDate(normalizeToUtcMidnight(date))}
             className="[--cell-size:--spacing(16)] md:[--cell-size:--spacing(20)] lg:[--cell-size:--spacing(24)]"
             formatters={{
               formatMonthDropdown: (date) => {

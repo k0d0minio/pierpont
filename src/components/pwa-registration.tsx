@@ -154,7 +154,7 @@ export default function PWARegistration() {
           onClick={() => window.__promptPWAInstall?.()}
           className="fixed bottom-4 right-4 z-50 rounded-full bg-emerald-600 text-white shadow-lg px-4 py-2 text-sm hover:bg-emerald-700"
         >
-          Installer l&apos;application
+          {"Installer l'application"}
         </Button>
       )}
 
@@ -164,11 +164,11 @@ export default function PWARegistration() {
             <DialogHeader>
               <DialogTitle>Installer cette application</DialogTitle>
               <DialogDescription>
-                Ajoutez à votre écran d&apos;accueil pour une expérience plus rapide et en plein écran.
+                {"Ajoutez à votre écran d'accueil pour une expérience plus rapide et en plein écran."}
               </DialogDescription>
             </DialogHeader>
             <p className="text-sm text-zinc-600 dark:text-zinc-300">
-              Sur iPhone/iPad : appuyez sur <span aria-hidden>Partager</span> puis <strong>Ajouter à l&apos;écran d&apos;accueil</strong>.
+              Sur iPhone/iPad : appuyez sur <span aria-hidden>Partager</span> puis <strong>{"Ajouter à l'écran d'accueil"}</strong>.
             </p>
             <DialogFooter>
               <Button variant="ghost" onClick={() => { setShowIOSBanner(false); localStorage.setItem('iosInstallBannerDismissed', '1') }}>Ignorer</Button>

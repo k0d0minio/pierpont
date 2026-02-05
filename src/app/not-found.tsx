@@ -11,7 +11,7 @@ export default function NotFound() {
   return (
     <div className="font-sans min-h-screen p-6 sm:p-10">
       <h1 className="text-xl sm:text-2xl font-semibold">Page introuvable</h1>
-      <p className="text-sm text-zinc-500 mt-2">La page que vous recherchez n&apos;existe pas.</p>
+      <p className="text-sm text-zinc-500 mt-2">{"La page que vous recherchez n'existe pas."}</p>
     </div>
   )
 }

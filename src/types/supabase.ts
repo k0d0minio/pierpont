@@ -44,123 +44,160 @@ export type Database = {
         }
         Relationships: []
       }
-      Entry: {
+      ProgramItem: {
         Row: {
           id: number
           dayId: number
-          type: 'breakfast' | 'hotel' | 'golf' | 'event' | 'reservation'
-          size: number | null
-          label: string | null
-          isAmbiguous: boolean | null
-          source: string | null
+          type: 'golf' | 'event'
           title: string | null
-          participantsCount: number | null
-          time: string | null
+          description: string | null
           startTime: string | null
           endTime: string | null
-          location: string | null
-          capacity: number | null
-          notes: string | null
-          guestName: string | null
-          roomNumber: string | null
           guestCount: number | null
-          description: string | null
-          pocId: number | null
-          phoneNumber: string | null
-          email: string | null
+          capacity: number | null
           venueTypeId: number | null
-          hotelBookingId: number | null
-          isTourOperator: boolean | null
-          isRecurring: boolean | null
+          pocId: number | null
+          tableBreakdown: Json | null
+          isRecurring: boolean
           recurrenceFrequency: 'weekly' | 'biweekly' | 'monthly' | 'yearly' | null
+          recurrenceGroupId: string | null
+          isTourOperator: boolean
+          notes: string | null
           createdAt: string
           updatedAt: string
         }
         Insert: {
           id?: number
           dayId: number
-          type: 'breakfast' | 'hotel' | 'golf' | 'event' | 'reservation'
-          size?: number | null
-          label?: string | null
-          isAmbiguous?: boolean | null
-          source?: string | null
+          type: 'golf' | 'event'
           title?: string | null
-          participantsCount?: number | null
-          time?: string | null
+          description?: string | null
           startTime?: string | null
           endTime?: string | null
-          location?: string | null
-          capacity?: number | null
-          notes?: string | null
-          guestName?: string | null
-          roomNumber?: string | null
           guestCount?: number | null
-          description?: string | null
-          pocId?: number | null
-          phoneNumber?: string | null
-          email?: string | null
+          capacity?: number | null
           venueTypeId?: number | null
-          hotelBookingId?: number | null
-          isTourOperator?: boolean | null
-          isRecurring?: boolean | null
+          pocId?: number | null
+          tableBreakdown?: Json | null
+          isRecurring?: boolean
           recurrenceFrequency?: 'weekly' | 'biweekly' | 'monthly' | 'yearly' | null
+          recurrenceGroupId?: string | null
+          isTourOperator?: boolean
+          notes?: string | null
           createdAt?: string
           updatedAt?: string
         }
         Update: {
           id?: number
           dayId?: number
-          type?: 'breakfast' | 'hotel' | 'golf' | 'event' | 'reservation'
-          size?: number | null
-          label?: string | null
-          isAmbiguous?: boolean | null
-          source?: string | null
+          type?: 'golf' | 'event'
           title?: string | null
-          participantsCount?: number | null
-          time?: string | null
+          description?: string | null
           startTime?: string | null
           endTime?: string | null
-          location?: string | null
-          capacity?: number | null
-          notes?: string | null
-          guestName?: string | null
-          roomNumber?: string | null
           guestCount?: number | null
-          description?: string | null
-          pocId?: number | null
-          phoneNumber?: string | null
-          email?: string | null
+          capacity?: number | null
           venueTypeId?: number | null
-          hotelBookingId?: number | null
-          isTourOperator?: boolean | null
-          isRecurring?: boolean | null
+          pocId?: number | null
+          tableBreakdown?: Json | null
+          isRecurring?: boolean
           recurrenceFrequency?: 'weekly' | 'biweekly' | 'monthly' | 'yearly' | null
+          recurrenceGroupId?: string | null
+          isTourOperator?: boolean
+          notes?: string | null
           createdAt?: string
           updatedAt?: string
         }
         Relationships: [
           {
-            foreignKeyName: "Entry_dayId_fkey"
+            foreignKeyName: "ProgramItem_dayId_fkey"
             columns: ["dayId"]
             referencedRelation: "Day"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "Entry_pocId_fkey"
-            columns: ["pocId"]
-            referencedRelation: "PointOfContact"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "Entry_venueTypeId_fkey"
+            foreignKeyName: "ProgramItem_venueTypeId_fkey"
             columns: ["venueTypeId"]
             referencedRelation: "VenueType"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "Entry_hotelBookingId_fkey"
+            foreignKeyName: "ProgramItem_pocId_fkey"
+            columns: ["pocId"]
+            referencedRelation: "PointOfContact"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      Reservation: {
+        Row: {
+          id: number
+          dayId: number
+          guestName: string | null
+          phoneNumber: string | null
+          email: string | null
+          guestCount: number | null
+          startTime: string | null
+          endTime: string | null
+          notes: string | null
+          isTourOperator: boolean
+          hotelBookingId: number | null
+          programItemId: number | null
+          tableIndex: number | null
+          createdAt: string
+          updatedAt: string
+        }
+        Insert: {
+          id?: number
+          dayId: number
+          guestName?: string | null
+          phoneNumber?: string | null
+          email?: string | null
+          guestCount?: number | null
+          startTime?: string | null
+          endTime?: string | null
+          notes?: string | null
+          isTourOperator?: boolean
+          hotelBookingId?: number | null
+          programItemId?: number | null
+          tableIndex?: number | null
+          createdAt?: string
+          updatedAt?: string
+        }
+        Update: {
+          id?: number
+          dayId?: number
+          guestName?: string | null
+          phoneNumber?: string | null
+          email?: string | null
+          guestCount?: number | null
+          startTime?: string | null
+          endTime?: string | null
+          notes?: string | null
+          isTourOperator?: boolean
+          hotelBookingId?: number | null
+          programItemId?: number | null
+          tableIndex?: number | null
+          createdAt?: string
+          updatedAt?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "Reservation_dayId_fkey"
+            columns: ["dayId"]
+            referencedRelation: "Day"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "Reservation_hotelBookingId_fkey"
             columns: ["hotelBookingId"]
             referencedRelation: "HotelBooking"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "Reservation_programItemId_fkey"
+            columns: ["programItemId"]
+            referencedRelation: "ProgramItem"
             referencedColumns: ["id"]
           }
         ]
@@ -169,7 +206,6 @@ export type Database = {
         Row: {
           id: number
           guestName: string | null
-          roomNumber: string | null
           guestCount: number | null
           checkInDate: string
           checkOutDate: string
@@ -181,7 +217,6 @@ export type Database = {
         Insert: {
           id?: number
           guestName?: string | null
-          roomNumber?: string | null
           guestCount?: number | null
           checkInDate: string
           checkOutDate: string
@@ -193,7 +228,6 @@ export type Database = {
         Update: {
           id?: number
           guestName?: string | null
-          roomNumber?: string | null
           guestCount?: number | null
           checkInDate?: string
           checkOutDate?: string
@@ -323,7 +357,8 @@ export type Enums<T extends keyof Database['public']['Enums']> = Database['publi
 
 // Specific table types
 export type Day = Tables<'Day'>
-export type Entry = Tables<'Entry'>
+export type ProgramItem = Tables<'ProgramItem'>
+export type Reservation = Tables<'Reservation'>
 export type HotelBooking = Tables<'HotelBooking'>
 export type BreakfastConfiguration = Tables<'BreakfastConfiguration'>
 export type PointOfContact = Tables<'PointOfContact'>
@@ -331,7 +366,8 @@ export type VenueType = Tables<'VenueType'>
 
 // Insert types
 export type DayInsert = Database['public']['Tables']['Day']['Insert']
-export type EntryInsert = Database['public']['Tables']['Entry']['Insert']
+export type ProgramItemInsert = Database['public']['Tables']['ProgramItem']['Insert']
+export type ReservationInsert = Database['public']['Tables']['Reservation']['Insert']
 export type HotelBookingInsert = Database['public']['Tables']['HotelBooking']['Insert']
 export type BreakfastConfigurationInsert = Database['public']['Tables']['BreakfastConfiguration']['Insert']
 export type PointOfContactInsert = Database['public']['Tables']['PointOfContact']['Insert']
@@ -339,7 +375,8 @@ export type VenueTypeInsert = Database['public']['Tables']['VenueType']['Insert'
 
 // Update types
 export type DayUpdate = Database['public']['Tables']['Day']['Update']
-export type EntryUpdate = Database['public']['Tables']['Entry']['Update']
+export type ProgramItemUpdate = Database['public']['Tables']['ProgramItem']['Update']
+export type ReservationUpdate = Database['public']['Tables']['Reservation']['Update']
 export type HotelBookingUpdate = Database['public']['Tables']['HotelBooking']['Update']
 export type BreakfastConfigurationUpdate = Database['public']['Tables']['BreakfastConfiguration']['Update']
 export type PointOfContactUpdate = Database['public']['Tables']['PointOfContact']['Update']

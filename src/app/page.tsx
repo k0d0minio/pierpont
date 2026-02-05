@@ -48,13 +48,30 @@ export default async function Home({ searchParams }: HomeProps) {
   const startDate = monthRange.startDate < todayUtc ? todayUtc : monthRange.startDate;
   await ensureDaysRange(startDate, monthRange.endDate);
 
-  // Query days for the month, filtering out past days
+  // Query days for the month
   const { data: days } = await supabase
     .from('Day')
-    .select('*, entries:Entry(*, venueType:VenueType(*), poc:PointOfContact(*))')
+    .select('id, dateISO, weekday, createdAt, updatedAt')
     .gte('dateISO', startDate.toISOString())
     .lte('dateISO', monthRange.endDate.toISOString())
     .order('dateISO', { ascending: true });
+
+  const dayIds = (days || []).map((d) => d.id);
+  const { data: programItems } = dayIds.length
+    ? await supabase
+        .from('ProgramItem')
+        .select('*, venueType:VenueType(*), poc:PointOfContact(*)')
+        .in('dayId', dayIds)
+    : { data: [] };
+  const { data: reservations } = dayIds.length
+    ? await supabase.from('Reservation').select('*').in('dayId', dayIds)
+    : { data: [] };
+
+  const daysWithEntries = (days || []).map((day) => ({
+    ...day,
+    programItems: (programItems || []).filter((p) => p.dayId === day.id),
+    reservations: (reservations || []).filter((r) => r.dayId === day.id),
+  }));
 
   // Query hotel bookings that overlap with the month range
   const startDateStr = startDate.toISOString().split('T')[0];
@@ -78,7 +95,7 @@ export default async function Home({ searchParams }: HomeProps) {
       <AdminIndicator />
       <div className="flex-1 min-h-0">
         <HomeClient
-          initialDays={days || []}
+          initialDays={daysWithEntries}
           initialHotelBookings={hotelBookings || []}
           initialBreakfastConfigs={breakfastConfigs || []}
           isCurrentMonth={monthRange.startDate <= todayUtc && monthRange.endDate >= todayUtc}

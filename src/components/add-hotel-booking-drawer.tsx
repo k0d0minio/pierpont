@@ -42,7 +42,7 @@ interface AddHotelBookingDrawerProps {
   error?: string | null;
   editBooking?: Tables<'HotelBooking'> | null;
   existingBreakfastConfigs?: Tables<'BreakfastConfiguration'>[];
-  existingReservations?: Tables<'Entry'>[];
+  existingReservations?: Tables<'Reservation'>[];
 }
 
 type BreakfastDayConfig = {
@@ -289,44 +289,41 @@ export function AddHotelBookingDrawer({
       if (reservationDays.length > 0) {
         // Fetch all reservations for the booking's date range
         const fetchReservations = async () => {
-          // Get all days in the reservation range
           const dayDates = reservationDays.map(d => d.toISOString())
-          
-          // Query entries for all days in the range
           const { data: days } = await supabaseClient
             .from('Day')
-            .select('dateISO, entries:Entry(*)')
+            .select('id, dateISO')
             .in('dateISO', dayDates)
-          
-          if (days) {
-            const configs: ReservationDayConfig[] = reservationDays.map(date => {
-              const dateStr = formatYmd(date)
-              const day = days.find(d => {
-                const dayDateStr = formatYmd(new Date(d.dateISO))
-                return dayDateStr === dateStr
-              })
-              
-              if (day?.entries) {
-                const reservation = (day.entries as any[]).find(
-                  (e: any) => e.type === 'reservation' && e.hotelBookingId === editBooking.id
-                )
-                
-                if (reservation) {
-                  return {
-                    date: dateStr,
-                    guestCount: reservation.guestCount || 0,
-                    startTime: reservation.startTime || null,
-                    endTime: reservation.endTime || null,
-                    notes: reservation.notes || '',
-                  }
-                }
+          const dayIds = (days || []).map(d => d.id)
+          const { data: reservations } = dayIds.length
+            ? await supabaseClient
+                .from('Reservation')
+                .select('dayId, guestCount, startTime, endTime, notes')
+                .eq('hotelBookingId', editBooking.id)
+                .in('dayId', dayIds)
+            : { data: [] }
+          const dateStrToDay = new Map<string, number>()
+          days?.forEach(d => {
+            dateStrToDay.set(formatYmd(new Date(d.dateISO)), d.id)
+          })
+          const configs: ReservationDayConfig[] = reservationDays.map(date => {
+            const dateStr = formatYmd(date)
+            const dayId = dateStrToDay.get(dateStr)
+            const reservation = dayId && reservations
+              ? reservations.find(r => r.dayId === dayId)
+              : null
+            if (reservation) {
+              return {
+                date: dateStr,
+                guestCount: reservation.guestCount || 0,
+                startTime: reservation.startTime || null,
+                endTime: reservation.endTime || null,
+                notes: reservation.notes || '',
               }
-              return null as any
-            }).filter(c => c !== null)
-            setReservationConfigs(configs)
-          } else {
-            setReservationConfigs([])
-          }
+            }
+            return { date: dateStr, guestCount: 0, startTime: null, endTime: null, notes: '' }
+          })
+          setReservationConfigs(configs)
         }
         
         fetchReservations()
@@ -635,9 +632,9 @@ export function AddHotelBookingDrawer({
     <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DrawerContent className="max-h-[90vh] flex flex-col">
         <DrawerHeader>
-          <DrawerTitle>{isEditMode ? 'Modifier la réservation d&apos;hôtel' : 'Ajouter une réservation d&apos;hôtel'}</DrawerTitle>
+          <DrawerTitle>{isEditMode ? "Modifier la réservation d'hôtel" : "Ajouter une réservation d'hôtel"}</DrawerTitle>
           <DrawerDescription>
-            Configurez la réservation d&apos;hôtel et les paramètres quotidiens de petit-déjeuner et de réservation
+            {"Configurez la réservation d'hôtel et les paramètres quotidiens de petit-déjeuner et de réservation"}
           </DrawerDescription>
         </DrawerHeader>
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
@@ -650,7 +647,7 @@ export function AddHotelBookingDrawer({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="guestName" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                        Nom de l&apos;invité *
+                        {"Nom de l'invité *"}
                       </Label>
                       <Input 
                         id="guestName"
@@ -664,7 +661,7 @@ export function AddHotelBookingDrawer({
                     </div>
                     <div>
                       <Label htmlFor="guestCount" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                          Nombre d&apos;invités
+                          {"Nombre d'invités"}
                       </Label>
                       <Input 
                         id="guestCount"
@@ -984,11 +981,11 @@ export function AddHotelBookingDrawer({
                     <TabsContent value="reservation" className="space-y-4 mt-4">
                       <div>
                         <Label className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3 block">
-                          Nombre d&apos;invités
+                          {"Nombre d'invités"}
                         </Label>
                         {(!reservationConfig || reservationConfig.guestCount === 0) ? (
                           <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center py-4">
-                            Aucune réservation configurée. Utilisez les boutons ci-dessous pour définir le nombre d&apos;invités.
+                            Aucune réservation configurée. {"Utilisez les boutons ci-dessous pour définir le nombre d'invités."}
                           </p>
                         ) : (
                           <div className="flex items-center gap-3 p-4 border rounded-lg bg-zinc-50 dark:bg-zinc-900/50">

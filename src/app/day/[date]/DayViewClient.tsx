@@ -13,13 +13,9 @@ import { useAdminAuth } from "@/lib/AdminAuthProvider"
 import { createHotelBooking, updateHotelBooking, deleteHotelBooking, createBreakfastConfiguration, updateBreakfastConfiguration, deleteBreakfastConfiguration, createGolfEntry, deleteGolfEntry, createEventEntry, deleteEventEntry, createReservationEntry, deleteReservationEntry, updateGolfEntry, updateEventEntry, updateReservationEntry, countRecurringOccurrences } from "./actions"
 import { Coffee, Building, LandPlot, Info } from 'lucide-react'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import type { Entry, HotelBooking, BreakfastConfiguration } from "@/types/supabase"
+import type { ProgramItem, Reservation, HotelBooking, BreakfastConfiguration } from "@/types/supabase"
+import type { ProgramItemWithRelations, DayEntry } from "@/types/components"
 import { DaySummaryCard } from "@/components/day-summary-card"
-
-type EntryWithRelations = Entry & {
-  venueType?: any;
-  poc?: any;
-}
 
 type HotelBookingWithRelations = HotelBooking & {
   breakfastConfigurations?: BreakfastConfiguration[];
@@ -32,9 +28,9 @@ type BreakfastConfigWithRelations = BreakfastConfiguration & {
 type DayViewClientProps = {
   hotelBookings?: HotelBookingWithRelations[];
   breakfastConfigs?: BreakfastConfigWithRelations[];
-  golfEntries?: EntryWithRelations[];
-  eventEntries?: EntryWithRelations[];
-  reservationEntries?: EntryWithRelations[];
+  golfEntries?: ProgramItemWithRelations[];
+  eventEntries?: ProgramItemWithRelations[];
+  reservationEntries?: (Reservation & { type: 'reservation' })[];
   dateParam: string;
 }
 
@@ -421,7 +417,7 @@ export default function DayViewClient({
               <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
                 <Building className="h-5 w-5 text-zinc-600 dark:text-zinc-400" />
                 <h2 className="text-base sm:text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-                  Réservations d&apos;hôtel
+                  {"Réservations d'hôtel"}
                 </h2>
                 <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
                   {totalHotelGuests}
@@ -432,7 +428,7 @@ export default function DayViewClient({
                 variant="default"
                 className="text-xs sm:text-sm whitespace-nowrap min-h-[44px] px-3 sm:px-4"
               >
-                <span className="hidden sm:inline">Ajouter une réservation d&apos;hôtel</span>
+                <span className="hidden sm:inline">{"Ajouter une réservation d'hôtel"}</span>
                 <span className="sm:hidden">Ajouter</span>
               </Button>
             </div>
@@ -578,7 +574,7 @@ export default function DayViewClient({
             ) : (
               <div className="text-center py-8 text-zinc-500 dark:text-zinc-400">
                 <Building className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                <p>Aucune réservation d&apos;hôtel pour cette date</p>
+                <p>{"Aucune réservation d'hôtel pour cette date"}</p>
               </div>
             )}
           </section>
@@ -622,19 +618,21 @@ export default function DayViewClient({
               {golfEntries.map((entry) => (
                 <EntryCard
                   key={entry.id}
-                  entry={entry}
+                  entry={entry as DayEntry}
                   isEditor={isAuthenticated}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
+                  eventEntriesForLookup={[...golfEntries, ...eventEntries].map((e) => ({ id: e.id, title: e.title ?? null, tableBreakdown: Array.isArray(e.tableBreakdown) ? (e.tableBreakdown as number[]) : null }))}
                 />
               ))}
               {eventEntries.map((entry) => (
                 <EntryCard
                   key={entry.id}
-                  entry={entry}
+                  entry={entry as DayEntry}
                   isEditor={isAuthenticated}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
+                  eventEntriesForLookup={[...golfEntries, ...eventEntries].map((e) => ({ id: e.id, title: e.title ?? null, tableBreakdown: Array.isArray(e.tableBreakdown) ? (e.tableBreakdown as number[]) : null }))}
                 />
               ))}
             </div>
@@ -651,12 +649,22 @@ export default function DayViewClient({
       <AddEntryModal
         isOpen={modalOpen}
         onClose={closeModal}
-        entryType={modalType}
+        entryType={modalType === 'hotel' ? null : modalType}
         onSubmit={handleSubmit}
         dateParam={dateParam}
         isSubmitting={isSubmitting}
         error={error}
         editEntry={editingEntry}
+        eventEntriesForDay={[...golfEntries, ...eventEntries].map((e) => ({
+          id: e.id,
+          title: e.title ?? null,
+          type: e.type as 'golf' | 'event',
+          tableBreakdown: (() => {
+            const tb = (e as { tableBreakdown?: unknown }).tableBreakdown
+            if (!tb || !Array.isArray(tb)) return null
+            return tb.map((n: unknown) => Number(n)).filter((n: number) => Number.isFinite(n) && n > 0)
+          })()
+        }))}
       />
 
       {/* Hotel Booking Drawer */}
@@ -695,11 +703,11 @@ export default function DayViewClient({
                 deleteType === 'breakfast'
                   ? 'configuration de petit-déjeuner'
                   : deleteType === 'booking'
-                    ? 'réservation d&apos;hôtel'
+                    ? "réservation d'hôtel"
                     : deleteType === 'golf'
                       ? 'entrée de golf'
                       : deleteType === 'event'
-                        ? 'entrée d&apos;événement'
+                        ? "entrée d'événement"
                         : deleteType === 'reservation'
                           ? 'entrée de réservation'
                           : (entryToDelete?.type || deleteType) + ' entrée'

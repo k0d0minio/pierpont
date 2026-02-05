@@ -62,16 +62,32 @@ export default async function DayPage({ params }: DayPageProps) {
     .eq('breakfastDate', dateParam)
     .order('startTime', { ascending: true, nullsFirst: true });
 
-  // Query other entry types (golf, event, reservation) with venue type and POC info
+  // Query program items (golf/event) and reservations for this day
   const { data: day } = await supabase
     .from('Day')
-    .select('*, entries:Entry(*, venueType:VenueType(*), poc:PointOfContact(*))')
+    .select('id, dateISO')
     .eq('dateISO', date.toISOString())
     .single();
 
-  const golfEntries = day?.entries?.filter((e: any) => e.type === 'golf') || [];
-  const eventEntries = day?.entries?.filter((e: any) => e.type === 'event') || [];
-  const reservationEntries = day?.entries?.filter((e: any) => e.type === 'reservation') || [];
+  const dayId = day?.id;
+  const { data: programItems } = dayId
+    ? await supabase
+        .from('ProgramItem')
+        .select('*, venueType:VenueType(*), poc:PointOfContact(*)')
+        .eq('dayId', dayId)
+        .order('startTime', { ascending: true, nullsFirst: true })
+    : { data: [] };
+  const { data: reservations } = dayId
+    ? await supabase
+        .from('Reservation')
+        .select('*')
+        .eq('dayId', dayId)
+        .order('startTime', { ascending: true, nullsFirst: true })
+    : { data: [] };
+
+  const golfEntries = programItems?.filter((e) => e.type === 'golf') || [];
+  const eventEntries = programItems?.filter((e) => e.type === 'event') || [];
+  const reservationEntries = (reservations || []).map((r) => ({ ...r, type: 'reservation' as const }));
 
   return (
     <div className="font-sans min-h-screen p-4 sm:p-6 lg:p-10">

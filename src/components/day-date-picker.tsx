@@ -145,7 +145,10 @@ export function DayDatePicker({ dateParam }: DayDatePickerProps) {
                 mode="single"
                 selected={date}
                 month={month}
-                onMonthChange={setMonth}
+                onMonthChange={(m) => {
+                  const startOfThisMonth = new Date(Date.UTC(todayUtc.getUTCFullYear(), todayUtc.getUTCMonth(), 1))
+                  setMonth(m >= startOfThisMonth ? m : startOfThisMonth)
+                }}
                 onSelect={handleDateSelect}
                 disabled={disabledDates}
                 fromDate={todayUtc}

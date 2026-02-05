@@ -250,9 +250,9 @@ export async function deletePOC(formData: FormData): Promise<ActionResponse> {
   }
 
   try {
-    // Check if POC is referenced in any entries
-    const { data: entries, error: checkError } = await supabase
-      .from('Entry')
+    // Check if POC is referenced in any program items
+    const { data: programItems, error: checkError } = await supabase
+      .from('ProgramItem')
       .select('id')
       .eq('pocId', id)
       .limit(1);
@@ -262,8 +262,8 @@ export async function deletePOC(formData: FormData): Promise<ActionResponse> {
       return { ok: false, error: 'Failed to check POC usage' };
     }
 
-    if (entries && entries.length > 0) {
-      return { ok: false, error: 'Cannot delete POC: it is referenced in one or more entries' };
+    if (programItems && programItems.length > 0) {
+      return { ok: false, error: 'Cannot delete POC: it is referenced in one or more program items' };
     }
 
     const { error } = await supabase
@@ -475,9 +475,9 @@ export async function deleteVenueType(formData: FormData): Promise<ActionRespons
   }
 
   try {
-    // Check if venue type is referenced in any entries
-    const { data: entries, error: checkError } = await supabase
-      .from('Entry')
+    // Check if venue type is referenced in any program items
+    const { data: programItems, error: checkError } = await supabase
+      .from('ProgramItem')
       .select('id')
       .eq('venueTypeId', id)
       .limit(1);
@@ -487,8 +487,8 @@ export async function deleteVenueType(formData: FormData): Promise<ActionRespons
       return { ok: false, error: 'Échec de la vérification de l\'utilisation du type de lieu' };
     }
 
-    if (entries && entries.length > 0) {
-      return { ok: false, error: 'Cannot delete venue type: it is referenced in one or more entries' };
+    if (programItems && programItems.length > 0) {
+      return { ok: false, error: 'Cannot delete venue type: it is referenced in one or more program items' };
     }
 
     const { error } = await supabase

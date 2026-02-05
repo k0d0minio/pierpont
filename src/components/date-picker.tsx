@@ -15,6 +15,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { CalendarIcon } from "lucide-react"
+import { getTodayBrusselsUtc, isPastDate, normalizeToUtcMidnight } from "@/lib/day-utils"
 
 function formatDate(date: Date | undefined) {
   if (!date) {
@@ -45,18 +46,18 @@ export function DatePickerInput() {
 
   return (
     <Field className="mx-auto w-48">
-      <FieldLabel htmlFor="date-required">Date d&apos;abonnement</FieldLabel>
+      <FieldLabel htmlFor="date-required">{"Date d'abonnement"}</FieldLabel>
       <InputGroup>
         <InputGroupInput
           id="date-required"
           value={value}
           placeholder="01 juin 2025"
           onChange={(e) => {
-            const date = new Date(e.target.value)
+            const next = new Date(e.target.value)
             setValue(e.target.value)
-            if (isValidDate(date)) {
-              setDate(date)
-              setMonth(date)
+            if (isValidDate(next) && !isPastDate(normalizeToUtcMidnight(next))) {
+              setDate(next)
+              setMonth(next)
             }
           }}
           onKeyDown={(e) => {
@@ -89,12 +90,19 @@ export function DatePickerInput() {
                 mode="single"
                 selected={date}
                 month={month}
-                onMonthChange={setMonth}
-                onSelect={(date) => {
-                  setDate(date)
-                  setValue(formatDate(date))
+                onMonthChange={(m) => {
+                  const today = getTodayBrusselsUtc()
+                  const startOfThisMonth = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1))
+                  setMonth(m >= startOfThisMonth ? m : startOfThisMonth)
+                }}
+                onSelect={(d) => {
+                  if (d && isPastDate(normalizeToUtcMidnight(d))) return
+                  setDate(d)
+                  setValue(formatDate(d))
                   setOpen(false)
                 }}
+                fromDate={getTodayBrusselsUtc()}
+                disabled={(d) => isPastDate(normalizeToUtcMidnight(d))}
               />
             </PopoverContent>
           </Popover>

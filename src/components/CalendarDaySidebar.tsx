@@ -12,8 +12,8 @@ import { useAdminAuth } from "@/lib/AdminAuthProvider"
 import { createHotelBooking, updateHotelBooking, deleteHotelBooking, createBreakfastConfiguration, updateBreakfastConfiguration, deleteBreakfastConfiguration, createGolfEntry, deleteGolfEntry, createEventEntry, deleteEventEntry, createReservationEntry, deleteReservationEntry, updateGolfEntry, updateEventEntry, updateReservationEntry, countRecurringOccurrences } from "@/app/day/[date]/actions"
 import { Coffee, Building, LandPlot, Edit, Trash2, Users, FileText, UtensilsCrossed } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import type { Entry, HotelBooking, BreakfastConfiguration } from "@/types/supabase"
-import type { EntryWithRelations } from "@/types/components"
+import type { ProgramItem, Reservation, HotelBooking, BreakfastConfiguration } from "@/types/supabase"
+import type { ProgramItemWithRelations, DayEntry } from "@/types/components"
 import { useRouter } from 'next/navigation'
 import { format } from 'date-fns'
 import { parseYmd } from '@/lib/day-utils'
@@ -29,9 +29,9 @@ type BreakfastConfigWithRelations = BreakfastConfiguration & {
 type CalendarDaySidebarProps = {
   hotelBookings?: HotelBookingWithRelations[];
   breakfastConfigs?: BreakfastConfigWithRelations[];
-  golfEntries?: EntryWithRelations[];
-  eventEntries?: EntryWithRelations[];
-  reservationEntries?: EntryWithRelations[];
+  golfEntries?: ProgramItemWithRelations[];
+  eventEntries?: ProgramItemWithRelations[];
+  reservationEntries?: (Reservation & { type: 'reservation' })[];
   dateParam: string | null;
   onDataChange?: () => void;
 }
@@ -56,12 +56,12 @@ export function CalendarDaySidebar({
   const [hotelBookingDrawerOpen, setHotelBookingDrawerOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [editingEntry, setEditingEntry] = useState<EntryWithRelations | null>(null)
+  const [editingEntry, setEditingEntry] = useState<DayEntry | null>(null)
   const [editingBooking, setEditingBooking] = useState<HotelBookingWithRelations | null>(null)
   const [editingBreakfast, setEditingBreakfast] = useState<BreakfastConfigWithRelations | null>(null)
   const [defaultBooking, setDefaultBooking] = useState<HotelBookingWithRelations | null>(null)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
-  const [entryToDelete, setEntryToDelete] = useState<EntryWithRelations | HotelBookingWithRelations | BreakfastConfigWithRelations | null>(null)
+  const [entryToDelete, setEntryToDelete] = useState<DayEntry | HotelBookingWithRelations | BreakfastConfigWithRelations | null>(null)
   const [deleteType, setDeleteType] = useState<DeleteType>(null)
   const [deleteAllRecurring, setDeleteAllRecurring] = useState(false)
   const [recurringOccurrencesCount, setRecurringOccurrencesCount] = useState(0)
@@ -73,21 +73,17 @@ export function CalendarDaySidebar({
     setEditingEntry(null)
   }
 
-  const openEditModal = (entry: EntryWithRelations | HotelBookingWithRelations) => {
-    // Check if it's a hotel booking by looking for checkInDate (hotel bookings don't have a type field)
+  const openEditModal = (entry: DayEntry | HotelBookingWithRelations) => {
     if ('checkInDate' in entry && entry.checkInDate) {
-      // It's a hotel booking
       setEditingBooking(entry as HotelBookingWithRelations)
       setHotelBookingDrawerOpen(true)
       setError(null)
     } else if ('type' in entry && entry.type && ['golf', 'event', 'reservation'].includes(entry.type)) {
-      // It's a golf, event, or reservation entry
       setModalType(entry.type as ModalType)
       setModalOpen(true)
       setError(null)
-      setEditingEntry(entry as EntryWithRelations)
+      setEditingEntry(entry as DayEntry)
     } else {
-      // Fallback (shouldn't happen, but handle gracefully)
       setError('Unknown entry type')
     }
   }
@@ -216,7 +212,7 @@ export function CalendarDaySidebar({
     }
   }
 
-  const handleDelete = async (entry: EntryWithRelations | HotelBookingWithRelations | BreakfastConfigWithRelations, type: DeleteType = null) => {
+  const handleDelete = async (entry: DayEntry | HotelBookingWithRelations | BreakfastConfigWithRelations, type: DeleteType = null) => {
     if (!dateParam) return
     
     setEntryToDelete(entry)
@@ -323,7 +319,7 @@ export function CalendarDaySidebar({
     setRecurringOccurrencesCount(0)
   }
 
-  const handleEdit = (entry: EntryWithRelations | HotelBookingWithRelations) => {
+  const handleEdit = (entry: DayEntry | HotelBookingWithRelations) => {
     openEditModal(entry)
   }
 
@@ -382,7 +378,7 @@ export function CalendarDaySidebar({
                 </div>
                 <div>
                   <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-                    Réservations d&apos;hôtel
+                    {"Réservations d'hôtel"}
                   </h2>
                   <p className="text-sm text-zinc-500 dark:text-zinc-400">
                     {totalHotelGuests} invité{totalHotelGuests !== 1 ? 's' : ''}
@@ -601,7 +597,7 @@ export function CalendarDaySidebar({
             ) : (
               <div className="text-center py-16 text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl border border-dashed border-zinc-200 dark:border-zinc-700">
                 <Building className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                <p className="text-base font-medium">Aucune réservation d&apos;hôtel pour cette date</p>
+                <p className="text-base font-medium">{"Aucune réservation d'hôtel pour cette date"}</p>
               </div>
             )}
           </section>
@@ -639,19 +635,21 @@ export function CalendarDaySidebar({
               {golfEntries.map((entry) => (
                 <EntryCard
                   key={entry.id}
-                  entry={entry}
+                  entry={entry as DayEntry}
                   isEditor={isAuthenticated}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
+                  eventEntriesForLookup={[...golfEntries, ...eventEntries].map((e) => ({ id: e.id, title: e.title ?? null, tableBreakdown: (Array.isArray(e.tableBreakdown) ? e.tableBreakdown : null) as number[] | null }))}
                 />
               ))}
               {eventEntries.map((entry) => (
                 <EntryCard
                   key={entry.id}
-                  entry={entry}
+                  entry={entry as DayEntry}
                   isEditor={isAuthenticated}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
+                  eventEntriesForLookup={[...golfEntries, ...eventEntries].map((e) => ({ id: e.id, title: e.title ?? null, tableBreakdown: (Array.isArray(e.tableBreakdown) ? e.tableBreakdown : null) as number[] | null }))}
                 />
               ))}
             </div>
@@ -670,12 +668,22 @@ export function CalendarDaySidebar({
       <AddEntryModal
         isOpen={modalOpen}
         onClose={closeModal}
-        entryType={modalType}
+        entryType={modalType === 'hotel' ? null : modalType}
         onSubmit={handleSubmit}
         dateParam={dateParam || ''}
         isSubmitting={isSubmitting}
         error={error}
         editEntry={editingEntry}
+        eventEntriesForDay={[...(golfEntries || []), ...(eventEntries || [])].map((e) => ({
+          id: e.id,
+          title: e.title ?? null,
+          type: e.type as 'golf' | 'event',
+          tableBreakdown: (() => {
+            const tb = (e as { tableBreakdown?: unknown }).tableBreakdown
+            if (!tb || !Array.isArray(tb)) return null
+            return tb.map((n: unknown) => Number(n)).filter((n: number) => Number.isFinite(n) && n > 0)
+          })()
+        }))}
       />
 
       {/* Hotel Booking Drawer */}
@@ -739,11 +747,11 @@ export function CalendarDaySidebar({
                 deleteType === 'breakfast'
                   ? 'configuration de petit-déjeuner'
                   : deleteType === 'booking'
-                    ? 'réservation d&apos;hôtel'
+                    ? "réservation d'hôtel"
                     : deleteType === 'golf'
                       ? 'entrée de golf'
                       : deleteType === 'event'
-                        ? 'entrée d&apos;événement'
+                        ? "entrée d'événement"
                         : deleteType === 'reservation'
                           ? 'entrée de réservation'
                           : (entryToDelete && 'type' in entryToDelete ? entryToDelete.type : deleteType || '') + ' entrée'

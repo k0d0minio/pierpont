@@ -6,21 +6,10 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Edit, Trash2, Clock, Users, Repeat, MapPin, User, type LucideIcon } from 'lucide-react'
-import type { EntryWithRelations } from '@/types/components'
+import type { DayEntry } from '@/types/components'
 import type { Tables } from '@/types/supabase'
 
-// Entry type configurations for styling
-const entryConfigs = {
-  breakfast: {
-    color: 'amber',
-    bgColor: 'bg-amber-50 dark:bg-amber-950/20',
-    borderColor: 'border-amber-200 dark:border-amber-800'
-  },
-  hotel: {
-    color: 'blue',
-    bgColor: 'bg-blue-50 dark:bg-blue-950/20',
-    borderColor: 'border-blue-200 dark:border-blue-800'
-  },
+const entryConfigs: Record<'golf' | 'event' | 'reservation', { color: string; bgColor: string; borderColor: string }> = {
   golf: {
     color: 'emerald',
     bgColor: 'bg-emerald-50 dark:bg-emerald-950/20',
@@ -36,7 +25,7 @@ const entryConfigs = {
     bgColor: 'bg-purple-50 dark:bg-purple-950/20',
     borderColor: 'border-purple-200 dark:border-purple-800'
   }
-} as const
+}
 
 // Helper function to render field-value pairs
 const renderField = (label: string, value: string | number | null | undefined, className: string = ''): ReactElement | null => {
@@ -107,38 +96,37 @@ const formatRecurrenceFrequency = (frequency: string | null | undefined): string
   return frequencyMap[frequency || ''] || frequency || ''
 }
 
+type EventEntryLookup = { id: number; title: string | null; tableBreakdown: number[] | null }
+
 interface EntryCardProps {
-  entry: EntryWithRelations;
+  entry: DayEntry;
   isEditor: boolean;
-  onEdit: (entry: EntryWithRelations) => void;
-  onDelete: (entry: EntryWithRelations) => void;
+  onEdit: (entry: DayEntry) => void;
+  onDelete: (entry: DayEntry) => void;
+  /** For reservation entries: used to show assigned program item and table */
+  eventEntriesForLookup?: EventEntryLookup[];
 }
 
-export function EntryCard({ entry, isEditor, onEdit, onDelete }: EntryCardProps) {
+export function EntryCard({ entry, isEditor, onEdit, onDelete, eventEntriesForLookup = [] }: EntryCardProps) {
   const config = entryConfigs[entry.type]
 
   const renderFields = (): (ReactElement | null)[] => {
     const fields: (ReactElement | null)[] = []
-    
-    switch (entry.type) {
-      case 'breakfast':
-      case 'hotel':
-        fields.push(renderField('Guest', entry.guestName))
-        fields.push(renderField('Guests', entry.guestCount))
-        break
-        
-      case 'golf':
-      case 'event':
-        // Golf and event entries are now rendered with a custom layout
-        // Return empty array as they're handled separately
-        return []
-        
-      case 'reservation':
-        fields.push(renderField('Guest', entry.guestName))
-        fields.push(renderField('Phone', entry.phoneNumber))
-        fields.push(renderField('Email', entry.email))
-        fields.push(renderField('Guests', entry.guestCount))
-        break
+    if (entry.type === 'golf' || entry.type === 'event') return []
+    if (entry.type === 'reservation') {
+      const programItemId = (entry as { programItemId?: number | null }).programItemId
+      const tableIdx = (entry as { tableIndex?: number | null }).tableIndex
+      const programEntry = programItemId ? eventEntriesForLookup.find(e => e.id === programItemId) : null
+      if (programEntry) {
+        fields.push(renderField('Événement', programEntry.title || `#${programItemId}`))
+        if (tableIdx != null && programEntry.tableBreakdown && programEntry.tableBreakdown[tableIdx] !== undefined) {
+          fields.push(renderField('Table', `Table ${tableIdx + 1} (${programEntry.tableBreakdown[tableIdx]} places)`))
+        }
+      }
+      fields.push(renderField('Guest', entry.guestName))
+      fields.push(renderField('Phone', entry.phoneNumber))
+      fields.push(renderField('Email', entry.email))
+      fields.push(renderField('Guests', entry.guestCount))
     }
     
     // Common fields for all types
@@ -149,18 +137,16 @@ export function EntryCard({ entry, isEditor, onEdit, onDelete }: EntryCardProps)
     return fields.filter((f): f is ReactElement => f !== null)
   }
 
-  // Render golf/event card with compact design similar to hotel booking
+  // Render golf/event card with compact design similar to hotel booking (entry narrowed to program item)
   const renderGolfEventCard = () => {
-    const timeRange = formatTimeRange(entry.startTime, entry.endTime)
-    const confirmedParticipants = entry.guestCount || 0
-    const maxCapacity = entry.capacity || 0
-    const venue = formatVenueType((entry.venueType as Tables<'VenueType'> | string | null | undefined) || entry.location)
-    const title = entry.title || 'Événement sans titre'
-    const description = entry.description || ''
+    const pi = entry as import('@/types/components').ProgramItemWithRelations
+    const timeRange = formatTimeRange(pi.startTime, pi.endTime)
+    const participantCount = pi.guestCount ?? 0
+    const venue = formatVenueType(pi.venueType as Tables<'VenueType'> | string | null | undefined)
+    const title = pi.title || 'Événement sans titre'
+    const description = pi.description || ''
     const descriptionPreview = description.length > 50 ? description.substring(0, 50) + '...' : description
-    
-    // Get POC and venue names from relations (same way as popover does)
-    const pocName = entry.poc?.name || null
+    const pocName = pi.poc?.name || null
     const venueName = venue
 
     return (
@@ -171,7 +157,7 @@ export function EntryCard({ entry, isEditor, onEdit, onDelete }: EntryCardProps)
               {title}
             </span>
             <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
-              {entry.isRecurring && entry.recurrenceFrequency && (
+              {pi.isRecurring && pi.recurrenceFrequency && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <button
@@ -183,7 +169,7 @@ export function EntryCard({ entry, isEditor, onEdit, onDelete }: EntryCardProps)
                     </button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Récurrent : {formatRecurrenceFrequency(entry.recurrenceFrequency)}</p>
+                    <p>Récurrent : {formatRecurrenceFrequency(pi.recurrenceFrequency)}</p>
                   </TooltipContent>
                 </Tooltip>
               )}
@@ -235,7 +221,7 @@ export function EntryCard({ entry, isEditor, onEdit, onDelete }: EntryCardProps)
                   </TooltipContent>
                 </Tooltip>
               )}
-              {(confirmedParticipants > 0 || maxCapacity > 0) && (
+              {participantCount > 0 && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <button
@@ -247,7 +233,7 @@ export function EntryCard({ entry, isEditor, onEdit, onDelete }: EntryCardProps)
                     </button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Participants : {confirmedParticipants}{maxCapacity > 0 ? ` / ${maxCapacity}` : ''}</p>
+                    <p>Participants : {participantCount}</p>
                   </TooltipContent>
                 </Tooltip>
               )}
@@ -258,6 +244,17 @@ export function EntryCard({ entry, isEditor, onEdit, onDelete }: EntryCardProps)
               {descriptionPreview}
             </span>
           )}
+          {(() => {
+            const tb = pi.tableBreakdown
+            if (!tb || !Array.isArray(tb) || tb.length === 0) return null
+            const nums = tb.map((n: unknown) => Number(n)).filter((n: number) => Number.isFinite(n) && n > 0)
+            if (nums.length === 0) return null
+            return (
+              <span className="text-xs text-zinc-500 dark:text-zinc-400 block mt-1">
+                Tables : {nums.join(', ')} ({nums.reduce((a, b) => a + b, 0)} places)
+              </span>
+            )
+          })()}
         </div>
         {isEditor && (
           <div className="flex gap-1.5 sm:gap-1.5 flex-shrink-0">

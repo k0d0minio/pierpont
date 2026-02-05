@@ -5,7 +5,7 @@ import { isEditor } from "../../actions/auth";
 import { revalidatePath } from "next/cache";
 import { ensureDaysRange } from "../../actions/days";
 import { parseYmd, formatYmd, addDays, isDateWithinOneYear, isPastDate, getTodayBrusselsUtc, getBrusselsYmd, dateFromYmdUtc } from "../../../lib/day-utils";
-import { EntryInsert, EntryUpdate, HotelBookingInsert, HotelBookingUpdate, BreakfastConfigurationInsert, BreakfastConfigurationUpdate } from "../../../types/supabase";
+import { ProgramItemInsert, ProgramItemUpdate, ReservationInsert, ReservationUpdate, HotelBookingInsert, HotelBookingUpdate, BreakfastConfigurationInsert, BreakfastConfigurationUpdate } from "../../../types/supabase";
 
 type ActionResponse = {
   ok: boolean;
@@ -76,148 +76,6 @@ function generateRecurrenceDates(startDate: Date, frequency: RecurrenceFrequency
   }
   
   return dates;
-}
-
-export async function createPDJGroup(formData: FormData): Promise<ActionResponse> {
-  console.log('createPDJGroup called with:', Object.fromEntries(formData.entries()));
-  const isEditorResult = await isEditor();
-  console.log('isEditor result:', isEditorResult);
-  
-  if (!isEditorResult) {
-    console.log('Not authenticated as editor');
-    return { ok: false, error: 'Non authentifié' };
-  }
-
-  const dateStr = formData.get("date") as string;
-  if (!dateStr) {
-    return { ok: false, error: 'La date est requise' };
-  }
-  const date = parseYmd(dateStr);
-
-  // Validate date is not in the past
-  if (isPastDate(date)) {
-    return { ok: false, error: 'Impossible de créer des entrées pour des dates passées' };
-  }
-
-  // Validate date is within 1 year
-  if (!isDateWithinOneYear(date)) {
-    return { ok: false, error: 'Date must be within 1 year from today' };
-  }
-
-  // Upsert day
-  const { data: day, error: dayError } = await supabase
-    .from('Day')
-    .upsert({
-      dateISO: date.toISOString(),
-      weekday: new Intl.DateTimeFormat("fr-FR", { timeZone: "Europe/Brussels", weekday: "long" }).format(date)
-    }, { onConflict: 'dateISO' })
-    .select()
-    .single();
-
-  if (dayError || !day) {
-    console.error('Day upsert failed:', dayError);
-    return { ok: false, error: dayError?.message || 'Échec de la création du jour' };
-  }
-
-  // Insert entry - direct field mapping
-  const guestCount = formData.get('guestCount');
-  const entryData: EntryInsert = {
-    dayId: day.id,
-    type: 'breakfast',
-    guestName: (formData.get('guestName') as string) || null,
-    roomNumber: (formData.get('roomNumber') as string) || null,
-    guestCount: guestCount ? Number(guestCount) : null,
-    startTime: (formData.get('startTime') as string) || null,
-    endTime: (formData.get('endTime') as string) || null,
-    notes: (formData.get('notes') as string) || null,
-    isTourOperator: formData.get('isTourOperator') === 'on',
-  };
-
-  const { data: entry, error: insertError } = await supabase.from('Entry').insert(entryData);
-
-  if (insertError) {
-    console.error('Entry insert failed:', insertError);
-    return { ok: false, error: insertError.message };
-  }
-
-  revalidatePath(`/day/${dateStr}`);
-  revalidatePath(`/`);
-  return { ok: true };
-}
-
-export async function createHotelGuest(formData: FormData): Promise<ActionResponse> {
-  if (!(await isEditor())) {
-    return { ok: false, error: 'Non authentifié' };
-  }
-
-  const dateStr = formData.get("date") as string;
-  if (!dateStr) {
-    return { ok: false, error: 'La date est requise' };
-  }
-  const date = parseYmd(dateStr);
-
-  // Validate date is not in the past
-  if (isPastDate(date)) {
-    return { ok: false, error: 'Impossible de créer des entrées pour des dates passées' };
-  }
-
-  // Validate date is within 1 year
-  if (!isDateWithinOneYear(date)) {
-    return { ok: false, error: 'Date must be within 1 year from today' };
-  }
-
-  // Upsert day
-  const { data: day, error: dayError } = await supabase
-    .from('Day')
-    .upsert({
-      dateISO: date.toISOString(),
-      weekday: new Intl.DateTimeFormat("fr-FR", { timeZone: "Europe/Brussels", weekday: "long" }).format(date)
-    }, { onConflict: 'dateISO' })
-    .select()
-    .single();
-
-  if (dayError || !day) {
-    console.error('Day upsert failed:', dayError);
-    return { ok: false, error: dayError?.message || 'Échec de la création du jour' };
-  }
-
-  // Insert entry - direct field mapping
-  const guestCount = formData.get('guestCount');
-  const entryData: EntryInsert = {
-    dayId: day.id,
-    type: 'hotel',
-    guestName: (formData.get('guestName') as string) || null,
-    roomNumber: (formData.get('roomNumber') as string) || null,
-    guestCount: guestCount ? Number(guestCount) : null,
-    startTime: (formData.get('startTime') as string) || null,
-    endTime: (formData.get('endTime') as string) || null,
-    notes: (formData.get('notes') as string) || null,
-    isTourOperator: formData.get('isTourOperator') === 'on',
-  };
-
-  const { data: entry, error: insertError } = await supabase.from('Entry').insert(entryData);
-
-  if (insertError) {
-    console.error('Entry insert failed:', insertError);
-    return { ok: false, error: insertError.message };
-  }
-
-  revalidatePath(`/day/${dateStr}`);
-  revalidatePath(`/`);
-  return { ok: true };
-}
-
-export async function deleteHotelGuest(formData: FormData): Promise<ActionResponse> {
-  if (!(await isEditor())) return { ok: false };
-  const idStr = formData.get("id") as string;
-  const dateStr = formData.get("date") as string | null;
-  const id = Number(idStr);
-  if (!Number.isFinite(id)) return { ok: false };
-
-  await supabase.from('Entry').delete().eq('id', id);
-  if (dateStr) revalidatePath(`/day/${dateStr}`);
-  revalidatePath(`/`);
-  return { ok: true };
 }
 
 export async function createGolfEntry(formData: FormData): Promise<ActionResponse> {
@@ -309,7 +167,10 @@ export async function createGolfEntry(formData: FormData): Promise<ActionRespons
   
   const size = formData.get('size');
   const capacity = formData.get('capacity');
-  const entryData: EntryInsert = {
+  const tableBreakdownStr = (formData.get('tableBreakdown') as string) || '';
+  const tableBreakdown = tableBreakdownStr ? parseTableBreakdown(tableBreakdownStr) : null;
+  const recurrenceGroupId = isRecurring && recurrenceFrequency ? crypto.randomUUID() : null;
+  const itemData: ProgramItemInsert = {
     dayId: day.id,
     type: 'golf',
     title: (formData.get('title') as string) || null,
@@ -322,22 +183,20 @@ export async function createGolfEntry(formData: FormData): Promise<ActionRespons
     endTime: (formData.get('endTime') as string) || null,
     notes: (formData.get('notes') as string) || null,
     isTourOperator: formData.get('isTourOperator') === 'on',
+    tableBreakdown: tableBreakdown && tableBreakdown.length > 0 ? tableBreakdown : null,
+    isRecurring: isRecurring,
+    recurrenceFrequency: (recurrenceFrequency as RecurrenceFrequency) || null,
+    recurrenceGroupId,
   };
 
   if (isRecurring && recurrenceFrequency) {
-    // Generate all occurrence dates up to 1 year from start date
     const oneYearFromStart = addDays(date, 365);
     const occurrenceDates = generateRecurrenceDates(date, recurrenceFrequency as RecurrenceFrequency, oneYearFromStart);
-    
-    // Create entries for all occurrences
-    const entriesToInsert: EntryInsert[] = [];
+    const itemsToInsert: ProgramItemInsert[] = [];
     const datesToRevalidate = new Set<string>([dateStr]);
-    
     for (const occurrenceDate of occurrenceDates) {
       const occurrenceDateStr = formatYmd(occurrenceDate);
       datesToRevalidate.add(occurrenceDateStr);
-      
-      // Upsert day for this occurrence
       const { data: occurrenceDay, error: dayErr } = await supabase
         .from('Day')
         .upsert({
@@ -346,103 +205,54 @@ export async function createGolfEntry(formData: FormData): Promise<ActionRespons
         }, { onConflict: 'dateISO' })
         .select()
         .single();
-      
-      if (dayErr || !occurrenceDay) {
-        console.error(`Day upsert failed for ${occurrenceDateStr}:`, dayErr);
-        continue; // Skip this occurrence but continue with others
-      }
-      
-      entriesToInsert.push({
-        ...entryData,
-        dayId: occurrenceDay.id,
-      });
+      if (dayErr || !occurrenceDay) continue;
+      itemsToInsert.push({ ...itemData, dayId: occurrenceDay.id });
     }
-    
-    // Insert all entries in a batch
-    if (entriesToInsert.length > 0) {
-      const { error: insertError } = await supabase.from('Entry').insert(entriesToInsert);
-      
-      if (insertError) {
-        console.error('Recurring entries insert failed:', insertError);
-        return { ok: false, error: insertError.message };
-      }
-      
-      // Revalidate all affected dates
-      datesToRevalidate.forEach(dateStr => {
-        revalidatePath(`/day/${dateStr}`);
-      });
+    if (itemsToInsert.length > 0) {
+      const { error: insertError } = await supabase.from('ProgramItem').insert(itemsToInsert);
+      if (insertError) return { ok: false, error: insertError.message };
+      datesToRevalidate.forEach(d => revalidatePath(`/day/${d}`));
       revalidatePath(`/`);
-      
-      return { ok: true, count: entriesToInsert.length };
+      return { ok: true, count: itemsToInsert.length };
     }
   } else {
-    // Single entry (non-recurring)
-    const { data: entry, error: insertError } = await supabase.from('Entry').insert({
-      ...entryData,
-      dayId: day.id,
-    });
-
-    if (insertError) {
-      console.error('Entry insert failed:', insertError);
-      return { ok: false, error: insertError.message };
-    }
-
+    const { error: insertError } = await supabase.from('ProgramItem').insert({ ...itemData, dayId: day.id });
+    if (insertError) return { ok: false, error: insertError.message };
     revalidatePath(`/day/${dateStr}`);
     revalidatePath(`/`);
     return { ok: true };
   }
-  
   return { ok: false, error: 'No entries created' };
 }
 
-// Helper function to find all occurrences of a recurring entry
-async function findRecurringOccurrences(entryId: number, entryType: 'breakfast' | 'hotel' | 'golf' | 'event' | 'reservation'): Promise<Array<{ id: number; dayId: number; Day?: { dateISO: string } }>> {
-  // First, get the entry to find its identifying fields
-  const { data: entry, error: entryError } = await supabase
-    .from('Entry')
+async function findRecurringOccurrences(
+  itemId: number,
+  itemType: 'golf' | 'event'
+): Promise<{ occurrences: Array<{ id: number; dayId: number; Day?: { dateISO: string } }>; recurrenceGroupId: string | null }> {
+  const { data: item, error: itemError } = await supabase
+    .from('ProgramItem')
     .select('*')
-    .eq('id', entryId)
+    .eq('id', itemId)
     .single();
-
-  if (entryError || !entry || !entry.isRecurring) {
-    return [];
-  }
-
-  // Build query to find all matching recurring entries
+  if (itemError || !item || !item.isRecurring) return { occurrences: [], recurrenceGroupId: null };
   let query = supabase
-    .from('Entry')
+    .from('ProgramItem')
     .select('id, dayId, Day!inner(dateISO)')
-    .eq('type', entryType)
-    .eq('isRecurring', true)
-    .eq('recurrenceFrequency', entry.recurrenceFrequency);
-
-  // Match on identifying fields based on entry type
-  if (entryType === 'event') {
-    if (entry.title) query = query.eq('title', entry.title);
-    if (entry.pocId) query = query.eq('pocId', entry.pocId);
-    if (entry.venueTypeId) query = query.eq('venueTypeId', entry.venueTypeId);
-    if (entry.startTime) query = query.eq('startTime', entry.startTime);
-    if (entry.endTime) query = query.eq('endTime', entry.endTime);
-  } else if (entryType === 'golf') {
-    if (entry.label) query = query.eq('label', entry.label);
-    if (entry.pocId) query = query.eq('pocId', entry.pocId);
-    if (entry.time) query = query.eq('time', entry.time);
+    .eq('type', itemType)
+    .eq('isRecurring', true);
+  if (item.recurrenceGroupId) {
+    query = query.eq('recurrenceGroupId', item.recurrenceGroupId);
+  } else {
+    query = query.eq('recurrenceFrequency', item.recurrenceFrequency);
+    if (item.title) query = query.eq('title', item.title);
   }
-
   const { data: occurrences, error } = await query;
-
-  if (error) {
-    console.error('Error finding recurring occurrences:', error);
-    return [];
-  }
-
-  return occurrences || [];
+  if (error) return { occurrences: [], recurrenceGroupId: null };
+  return { occurrences: occurrences || [], recurrenceGroupId: item.recurrenceGroupId ?? null };
 }
 
-// Count recurring occurrences (excluding the current entry)
-export async function countRecurringOccurrences(entryId: number, entryType: 'breakfast' | 'hotel' | 'golf' | 'event' | 'reservation'): Promise<number> {
-  const occurrences = await findRecurringOccurrences(entryId, entryType);
-  // Exclude the current entry from the count
+export async function countRecurringOccurrences(itemId: number, itemType: 'golf' | 'event'): Promise<number> {
+  const { occurrences } = await findRecurringOccurrences(itemId, itemType);
   return Math.max(0, occurrences.length - 1);
 }
 
@@ -455,38 +265,22 @@ export async function deleteGolfEntry(formData: FormData): Promise<ActionRespons
   if (!Number.isFinite(id)) return { ok: false };
   
   if (deleteAllRecurring) {
-    // Delete all occurrences of this recurring entry
-    const occurrences = await findRecurringOccurrences(id, 'golf');
-    const idsToDelete = occurrences.map(o => o.id);
-    
-    if (idsToDelete.length > 0) {
-      const { error } = await supabase
-        .from('Entry')
-        .delete()
-        .in('id', idsToDelete);
-      
-      if (error) {
-        console.error('Error deleting recurring occurrences:', error);
-        return { ok: false, error: error.message };
-      }
-
-      // Revalidate all affected dates
+    const { occurrences, recurrenceGroupId } = await findRecurringOccurrences(id, 'golf');
+    if (occurrences.length > 0) {
+      const { error } = recurrenceGroupId
+        ? await supabase.from('ProgramItem').delete().eq('recurrenceGroupId', recurrenceGroupId)
+        : await supabase.from('ProgramItem').delete().in('id', occurrences.map(o => o.id));
+      if (error) return { ok: false, error: error.message };
       const datesToRevalidate = new Set<string>(dateStr ? [dateStr] : []);
       for (const occ of occurrences) {
-        if (occ.Day?.dateISO) {
-          const dateStr = occ.Day.dateISO.split('T')[0];
-          datesToRevalidate.add(dateStr);
-        }
+        if (occ.Day?.dateISO) datesToRevalidate.add(occ.Day.dateISO.split('T')[0]);
       }
-      
       datesToRevalidate.forEach(d => revalidatePath(`/day/${d}`));
       revalidatePath(`/`);
-      return { ok: true, count: idsToDelete.length };
+      return { ok: true, count: occurrences.length };
     }
   }
-  
-  // Delete single entry
-  await supabase.from('Entry').delete().eq('id', id);
+  await supabase.from('ProgramItem').delete().eq('id', id);
   if (dateStr) revalidatePath(`/day/${dateStr}`);
   revalidatePath(`/`);
   return { ok: true };
@@ -581,7 +375,10 @@ export async function createEventEntry(formData: FormData): Promise<ActionRespon
   
   const size = formData.get('size');
   const capacity = formData.get('capacity');
-  const entryData: EntryInsert = {
+  const tableBreakdownStr = (formData.get('tableBreakdown') as string) || '';
+  const tableBreakdown = tableBreakdownStr ? parseTableBreakdown(tableBreakdownStr) : null;
+  const recurrenceGroupId = isRecurring && recurrenceFrequency ? crypto.randomUUID() : null;
+  const itemData: ProgramItemInsert = {
     dayId: day.id,
     type: 'event',
     title: (formData.get('title') as string) || null,
@@ -594,22 +391,20 @@ export async function createEventEntry(formData: FormData): Promise<ActionRespon
     endTime: (formData.get('endTime') as string) || null,
     notes: (formData.get('notes') as string) || null,
     isTourOperator: formData.get('isTourOperator') === 'on',
+    tableBreakdown: tableBreakdown && tableBreakdown.length > 0 ? tableBreakdown : null,
+    isRecurring: isRecurring,
+    recurrenceFrequency: (recurrenceFrequency as RecurrenceFrequency) || null,
+    recurrenceGroupId,
   };
 
   if (isRecurring && recurrenceFrequency) {
-    // Generate all occurrence dates up to 1 year from start date
     const oneYearFromStart = addDays(date, 365);
     const occurrenceDates = generateRecurrenceDates(date, recurrenceFrequency as RecurrenceFrequency, oneYearFromStart);
-    
-    // Create entries for all occurrences
-    const entriesToInsert: EntryInsert[] = [];
+    const itemsToInsert: ProgramItemInsert[] = [];
     const datesToRevalidate = new Set<string>([dateStr]);
-    
     for (const occurrenceDate of occurrenceDates) {
       const occurrenceDateStr = formatYmd(occurrenceDate);
       datesToRevalidate.add(occurrenceDateStr);
-      
-      // Upsert day for this occurrence
       const { data: occurrenceDay, error: dayErr } = await supabase
         .from('Day')
         .upsert({
@@ -618,52 +413,23 @@ export async function createEventEntry(formData: FormData): Promise<ActionRespon
         }, { onConflict: 'dateISO' })
         .select()
         .single();
-      
-      if (dayErr || !occurrenceDay) {
-        console.error(`Day upsert failed for ${occurrenceDateStr}:`, dayErr);
-        continue; // Skip this occurrence but continue with others
-      }
-      
-      entriesToInsert.push({
-        ...entryData,
-        dayId: occurrenceDay.id,
-      });
+      if (dayErr || !occurrenceDay) continue;
+      itemsToInsert.push({ ...itemData, dayId: occurrenceDay.id });
     }
-    
-    // Insert all entries in a batch
-    if (entriesToInsert.length > 0) {
-      const { error: insertError } = await supabase.from('Entry').insert(entriesToInsert);
-      
-      if (insertError) {
-        console.error('Recurring entries insert failed:', insertError);
-        return { ok: false, error: insertError.message };
-      }
-      
-      // Revalidate all affected dates
-      datesToRevalidate.forEach(dateStr => {
-        revalidatePath(`/day/${dateStr}`);
-      });
+    if (itemsToInsert.length > 0) {
+      const { error: insertError } = await supabase.from('ProgramItem').insert(itemsToInsert);
+      if (insertError) return { ok: false, error: insertError.message };
+      datesToRevalidate.forEach(d => revalidatePath(`/day/${d}`));
       revalidatePath(`/`);
-      
-      return { ok: true, count: entriesToInsert.length };
+      return { ok: true, count: itemsToInsert.length };
     }
   } else {
-    // Single entry (non-recurring)
-    const { data: entry, error: insertError } = await supabase.from('Entry').insert({
-      ...entryData,
-      dayId: day.id,
-    });
-
-    if (insertError) {
-      console.error('Entry insert failed:', insertError);
-      return { ok: false, error: insertError.message };
-    }
-
+    const { error: insertError } = await supabase.from('ProgramItem').insert({ ...itemData, dayId: day.id });
+    if (insertError) return { ok: false, error: insertError.message };
     revalidatePath(`/day/${dateStr}`);
     revalidatePath(`/`);
     return { ok: true };
   }
-  
   return { ok: false, error: 'No entries created' };
 }
 
@@ -676,38 +442,22 @@ export async function deleteEventEntry(formData: FormData): Promise<ActionRespon
   if (!Number.isFinite(id)) return { ok: false };
   
   if (deleteAllRecurring) {
-    // Delete all occurrences of this recurring entry
-    const occurrences = await findRecurringOccurrences(id, 'event');
-    const idsToDelete = occurrences.map(o => o.id);
-    
-    if (idsToDelete.length > 0) {
-      const { error } = await supabase
-        .from('Entry')
-        .delete()
-        .in('id', idsToDelete);
-      
-      if (error) {
-        console.error('Error deleting recurring occurrences:', error);
-        return { ok: false, error: error.message };
-      }
-
-      // Revalidate all affected dates
+    const { occurrences, recurrenceGroupId } = await findRecurringOccurrences(id, 'event');
+    if (occurrences.length > 0) {
+      const { error } = recurrenceGroupId
+        ? await supabase.from('ProgramItem').delete().eq('recurrenceGroupId', recurrenceGroupId)
+        : await supabase.from('ProgramItem').delete().in('id', occurrences.map(o => o.id));
+      if (error) return { ok: false, error: error.message };
       const datesToRevalidate = new Set<string>(dateStr ? [dateStr] : []);
       for (const occ of occurrences) {
-        if (occ.Day?.dateISO) {
-          const dateStr = occ.Day.dateISO.split('T')[0];
-          datesToRevalidate.add(dateStr);
-        }
+        if (occ.Day?.dateISO) datesToRevalidate.add(occ.Day.dateISO.split('T')[0]);
       }
-      
       datesToRevalidate.forEach(d => revalidatePath(`/day/${d}`));
       revalidatePath(`/`);
-      return { ok: true, count: idsToDelete.length };
+      return { ok: true, count: occurrences.length };
     }
   }
-  
-  // Delete single entry
-  await supabase.from('Entry').delete().eq('id', id);
+  await supabase.from('ProgramItem').delete().eq('id', id);
   if (dateStr) revalidatePath(`/day/${dateStr}`);
   revalidatePath(`/`);
   return { ok: true };
@@ -749,11 +499,15 @@ export async function createReservationEntry(formData: FormData): Promise<Action
     return { ok: false, error: dayError?.message || 'Échec de la création du jour' };
   }
 
-  // Insert entry - direct field mapping
   const guestCount = formData.get('guestCount');
-  const entryData: EntryInsert = {
+  const programItemIdStr = formData.get('eventEntryId') as string | null;
+  const programItemId = programItemIdStr && Number.isFinite(Number(programItemIdStr)) ? Number(programItemIdStr) : null;
+  const tableIndexStr = formData.get('tableIndex') as string | null;
+  const tableIndex = tableIndexStr !== null && tableIndexStr !== '' && Number.isFinite(Number(tableIndexStr)) ? Number(tableIndexStr) : null;
+  const hotelBookingIdStr = formData.get('hotelBookingId') as string | null;
+  const hotelBookingId = hotelBookingIdStr && Number.isFinite(Number(hotelBookingIdStr)) ? Number(hotelBookingIdStr) : null;
+  const reservationData: ReservationInsert = {
     dayId: day.id,
-    type: 'reservation',
     guestName: (formData.get('guestName') as string) || null,
     phoneNumber: (formData.get('phoneNumber') as string) || null,
     email: (formData.get('email') as string) || null,
@@ -762,12 +516,15 @@ export async function createReservationEntry(formData: FormData): Promise<Action
     endTime: (formData.get('endTime') as string) || null,
     notes: (formData.get('notes') as string) || null,
     isTourOperator: formData.get('isTourOperator') === 'on',
+    programItemId: programItemId || null,
+    tableIndex: tableIndex !== null ? tableIndex : null,
+    hotelBookingId: hotelBookingId || null,
   };
 
-  const { data: entry, error: insertError } = await supabase.from('Entry').insert(entryData);
+  const { error: insertError } = await supabase.from('Reservation').insert(reservationData);
 
   if (insertError) {
-    console.error('Entry insert failed:', insertError);
+    console.error('Reservation insert failed:', insertError);
     return { ok: false, error: insertError.message };
   }
 
@@ -783,97 +540,8 @@ export async function deleteReservationEntry(formData: FormData): Promise<Action
   const id = Number(idStr);
   if (!Number.isFinite(id)) return { ok: false };
   
-  await supabase.from('Entry').delete().eq('id', id);
+  await supabase.from('Reservation').delete().eq('id', id);
   if (dateStr) revalidatePath(`/day/${dateStr}`);
-  revalidatePath(`/`);
-  return { ok: true };
-}
-
-export async function updatePDJGroup(formData: FormData): Promise<ActionResponse> {
-  console.log('updatePDJGroup called with:', Object.fromEntries(formData.entries()));
-  const isEditorResult = await isEditor();
-  console.log('isEditor result:', isEditorResult);
-  
-  if (!isEditorResult) {
-    console.log('Not authenticated as editor');
-    return { ok: false, error: 'Non authentifié' };
-  }
-
-  const idStr = formData.get("id") as string;
-  const id = Number(idStr);
-  if (!Number.isFinite(id)) {
-    return { ok: false, error: 'Invalid entry ID' };
-  }
-
-  const dateStr = formData.get("date") as string | null;
-  const guestCount = formData.get('guestCount');
-
-  // Update entry - direct field mapping
-  const updateData: EntryUpdate = {
-    guestName: (formData.get('guestName') as string) || null,
-    roomNumber: (formData.get('roomNumber') as string) || null,
-    guestCount: guestCount ? Number(guestCount) : null,
-    startTime: (formData.get('startTime') as string) || null,
-    endTime: (formData.get('endTime') as string) || null,
-    notes: (formData.get('notes') as string) || null,
-    isTourOperator: formData.get('isTourOperator') === 'on',
-  };
-
-  const { error: updateError } = await supabase
-    .from('Entry')
-    .update(updateData)
-    .eq('id', id);
-
-  if (updateError) {
-    console.error('Entry update failed:', updateError);
-    return { ok: false, error: updateError.message };
-  }
-
-  if (dateStr) {
-    revalidatePath(`/day/${dateStr}`);
-  }
-  revalidatePath(`/`);
-  return { ok: true };
-}
-
-export async function updateHotelGuest(formData: FormData): Promise<ActionResponse> {
-  if (!(await isEditor())) {
-    return { ok: false, error: 'Non authentifié' };
-  }
-
-  const idStr = formData.get("id") as string;
-  const id = Number(idStr);
-  if (!Number.isFinite(id)) {
-    return { ok: false, error: 'Invalid entry ID' };
-  }
-
-  const dateStr = formData.get("date") as string | null;
-  const guestCount = formData.get('guestCount');
-
-  // Update entry - direct field mapping
-  const updateData: EntryUpdate = {
-    guestName: (formData.get('guestName') as string) || null,
-    roomNumber: (formData.get('roomNumber') as string) || null,
-    guestCount: guestCount ? Number(guestCount) : null,
-    startTime: (formData.get('startTime') as string) || null,
-    endTime: (formData.get('endTime') as string) || null,
-    notes: (formData.get('notes') as string) || null,
-    isTourOperator: formData.get('isTourOperator') === 'on',
-  };
-
-  const { error: updateError } = await supabase
-    .from('Entry')
-    .update(updateData)
-    .eq('id', id);
-
-  if (updateError) {
-    console.error('Entry update failed:', updateError);
-    return { ok: false, error: updateError.message };
-  }
-
-  if (dateStr) {
-    revalidatePath(`/day/${dateStr}`);
-  }
   revalidatePath(`/`);
   return { ok: true };
 }
@@ -889,73 +557,39 @@ export async function updateGolfEntry(formData: FormData): Promise<ActionRespons
     return { ok: false, error: 'Invalid entry ID' };
   }
 
-  // Get the current entry to check if it's recurring
-  const { data: currentEntry, error: entryError } = await supabase
-    .from('Entry')
+  const { data: currentItem, error: itemError } = await supabase
+    .from('ProgramItem')
     .select('*')
     .eq('id', id)
     .single();
-
-  if (entryError || !currentEntry) {
-    return { ok: false, error: 'Entry not found' };
-  }
+  if (itemError || !currentItem) return { ok: false, error: 'Entry not found' };
 
   const dateStr = formData.get("date") as string | null;
   const pocValue = formData.get("poc") as string | null;
   let pocId: number | null = null;
-
-  // Handle POC if provided - can be ID (number) or name (string)
   if (pocValue) {
     const pocNum = Number(pocValue);
-    if (Number.isFinite(pocNum)) {
-      // It's a POC ID
-      pocId = pocNum;
-    } else {
-      // It's a POC name (backward compatibility) - try to find existing or create new
-      const { data: existingPoc } = await supabase
-        .from('PointOfContact')
-        .select('id')
-        .eq('name', pocValue.trim())
-        .single();
-      
-      if (existingPoc) {
-        pocId = existingPoc.id;
-      } else {
-        // Create new POC
-        const { data: poc, error: pocError } = await supabase
-          .from('PointOfContact')
-          .insert({ name: pocValue.trim() })
-          .select()
-          .single();
-        
-        if (pocError) {
-          console.error('POC creation failed:', pocError);
-          // Continue without POC rather than failing
-        } else {
-          pocId = poc.id;
-        }
+    if (Number.isFinite(pocNum)) pocId = pocNum;
+    else {
+      const { data: existingPoc } = await supabase.from('PointOfContact').select('id').eq('name', pocValue.trim()).single();
+      if (existingPoc) pocId = existingPoc.id;
+      else {
+        const { data: poc, error: pocError } = await supabase.from('PointOfContact').insert({ name: pocValue.trim() }).select().single();
+        if (!pocError && poc) pocId = poc.id;
       }
     }
   }
-
-  // Handle venue type
   const venueTypeValue = formData.get('venueType') as string | null;
   let venueTypeId: number | null = null;
-  if (venueTypeValue) {
-    const venueTypeNum = Number(venueTypeValue);
-    if (Number.isFinite(venueTypeNum)) {
-      venueTypeId = venueTypeNum;
-    }
-  }
-
-  // Handle recurring fields
+  if (venueTypeValue && Number.isFinite(Number(venueTypeValue))) venueTypeId = Number(venueTypeValue);
   const isRecurring = formData.get('isRecurring') === 'true';
   const recurrenceFrequency = (formData.get('recurrenceFrequency') as string) || null;
   const size = formData.get('size');
   const capacity = formData.get('capacity');
+  const tableBreakdownStr = (formData.get('tableBreakdown') as string) || '';
+  const tableBreakdown = tableBreakdownStr ? parseTableBreakdown(tableBreakdownStr) : null;
 
-  // Update entry with POC reference
-  const updateData: EntryUpdate = {
+  const updateData: ProgramItemUpdate = {
     title: (formData.get('title') as string) || null,
     description: (formData.get('description') as string) || null,
     guestCount: size ? Number(size) : null,
@@ -968,60 +602,39 @@ export async function updateGolfEntry(formData: FormData): Promise<ActionRespons
     isTourOperator: formData.get('isTourOperator') === 'on',
     isRecurring: isRecurring,
     recurrenceFrequency: recurrenceFrequency as RecurrenceFrequency | null,
+    tableBreakdown: tableBreakdown && tableBreakdown.length > 0 ? tableBreakdown : null,
   };
 
-  // If this is a recurring entry, find all occurrences and update them all
-  if (currentEntry.isRecurring) {
-    const occurrences = await findRecurringOccurrences(id, 'golf');
-    const occurrenceIds = occurrences.map(o => o.id);
-    
-    // Update all occurrences (including the current one)
-    const allIds = [...new Set([id, ...occurrenceIds])];
-    
-    const { error: updateError } = await supabase
-      .from('Entry')
-      .update(updateData)
-      .in('id', allIds);
-
-    if (updateError) {
-      console.error('Recurring entries update failed:', updateError);
-      return { ok: false, error: updateError.message };
-    }
-
-    // Revalidate all affected dates
-    const datesToRevalidate = new Set<string>();
-    if (dateStr) datesToRevalidate.add(dateStr);
-    occurrences.forEach(occ => {
-      if (occ.Day?.dateISO) {
-        const date = new Date(occ.Day.dateISO);
-        datesToRevalidate.add(formatYmd(date));
-      }
-    });
-    
-    datesToRevalidate.forEach(date => {
-      revalidatePath(`/day/${date}`);
-    });
+  const applyToRecurring = formData.get('applyToRecurring') as string | null;
+  if (currentItem.isRecurring && applyToRecurring === 'all') {
+    const { occurrences } = await findRecurringOccurrences(id, 'golf');
+    const allIds = [...new Set([id, ...occurrences.map(o => o.id)])];
+    const byGroup = currentItem.recurrenceGroupId
+      ? supabase.from('ProgramItem').update(updateData).eq('recurrenceGroupId', currentItem.recurrenceGroupId)
+      : (() => {
+          const q = supabase.from('ProgramItem').update(updateData);
+          return allIds.length > 0 ? q.in('id', allIds) : q.eq('id', id);
+        })();
+    const { error: updateError } = await byGroup;
+    if (updateError) return { ok: false, error: updateError.message };
+    const datesToRevalidate = new Set<string>(dateStr ? [dateStr] : []);
+    occurrences.forEach(occ => { if (occ.Day?.dateISO) datesToRevalidate.add(formatYmd(new Date(occ.Day.dateISO))); });
+    datesToRevalidate.forEach(d => revalidatePath(`/day/${d}`));
     revalidatePath(`/`);
-    
     return { ok: true, count: allIds.length };
-  } else {
-    // Single entry update
-    const { error: updateError } = await supabase
-      .from('Entry')
-      .update(updateData)
-      .eq('id', id);
-
-    if (updateError) {
-      console.error('Entry update failed:', updateError);
-      return { ok: false, error: updateError.message };
-    }
-
-    if (dateStr) {
-      revalidatePath(`/day/${dateStr}`);
-    }
+  }
+  if (currentItem.isRecurring && applyToRecurring !== 'all') {
+    const { error: updateError } = await supabase.from('ProgramItem').update(updateData).eq('id', id);
+    if (updateError) return { ok: false, error: updateError.message };
+    if (dateStr) revalidatePath(`/day/${dateStr}`);
     revalidatePath(`/`);
     return { ok: true };
   }
+  const { error: updateError } = await supabase.from('ProgramItem').update(updateData).eq('id', id);
+  if (updateError) return { ok: false, error: updateError.message };
+  if (dateStr) revalidatePath(`/day/${dateStr}`);
+  revalidatePath(`/`);
+  return { ok: true };
 }
 
 export async function updateEventEntry(formData: FormData): Promise<ActionResponse> {
@@ -1035,73 +648,39 @@ export async function updateEventEntry(formData: FormData): Promise<ActionRespon
     return { ok: false, error: 'Invalid entry ID' };
   }
 
-  // Get the current entry to check if it's recurring
-  const { data: currentEntry, error: entryError } = await supabase
-    .from('Entry')
+  const { data: currentItem, error: itemError } = await supabase
+    .from('ProgramItem')
     .select('*')
     .eq('id', id)
     .single();
-
-  if (entryError || !currentEntry) {
-    return { ok: false, error: 'Entry not found' };
-  }
+  if (itemError || !currentItem) return { ok: false, error: 'Entry not found' };
 
   const dateStr = formData.get("date") as string | null;
   const pocValue = formData.get("poc") as string | null;
   let pocId: number | null = null;
-
-  // Handle POC if provided - can be ID (number) or name (string)
   if (pocValue) {
     const pocNum = Number(pocValue);
-    if (Number.isFinite(pocNum)) {
-      // It's a POC ID
-      pocId = pocNum;
-    } else {
-      // It's a POC name (backward compatibility) - try to find existing or create new
-      const { data: existingPoc } = await supabase
-        .from('PointOfContact')
-        .select('id')
-        .eq('name', pocValue.trim())
-        .single();
-      
-      if (existingPoc) {
-        pocId = existingPoc.id;
-      } else {
-        // Create new POC
-        const { data: poc, error: pocError } = await supabase
-          .from('PointOfContact')
-          .insert({ name: pocValue.trim() })
-          .select()
-          .single();
-        
-        if (pocError) {
-          console.error('POC creation failed:', pocError);
-          // Continue without POC rather than failing
-        } else {
-          pocId = poc.id;
-        }
+    if (Number.isFinite(pocNum)) pocId = pocNum;
+    else {
+      const { data: existingPoc } = await supabase.from('PointOfContact').select('id').eq('name', pocValue.trim()).single();
+      if (existingPoc) pocId = existingPoc.id;
+      else {
+        const { data: poc, error: pocError } = await supabase.from('PointOfContact').insert({ name: pocValue.trim() }).select().single();
+        if (!pocError && poc) pocId = poc.id;
       }
     }
   }
-
-  // Handle venue type
   const venueTypeValue = formData.get('venueType') as string | null;
   let venueTypeId: number | null = null;
-  if (venueTypeValue) {
-    const venueTypeNum = Number(venueTypeValue);
-    if (Number.isFinite(venueTypeNum)) {
-      venueTypeId = venueTypeNum;
-    }
-  }
-
-  // Handle recurring fields
+  if (venueTypeValue && Number.isFinite(Number(venueTypeValue))) venueTypeId = Number(venueTypeValue);
   const isRecurring = formData.get('isRecurring') === 'true';
   const recurrenceFrequency = (formData.get('recurrenceFrequency') as string) || null;
   const size = formData.get('size');
   const capacity = formData.get('capacity');
+  const tableBreakdownStr = (formData.get('tableBreakdown') as string) || '';
+  const tableBreakdown = tableBreakdownStr ? parseTableBreakdown(tableBreakdownStr) : null;
 
-  // Update entry with POC reference
-  const updateData: EntryUpdate = {
+  const updateData: ProgramItemUpdate = {
     title: (formData.get('title') as string) || null,
     description: (formData.get('description') as string) || null,
     guestCount: size ? Number(size) : null,
@@ -1114,60 +693,39 @@ export async function updateEventEntry(formData: FormData): Promise<ActionRespon
     isTourOperator: formData.get('isTourOperator') === 'on',
     isRecurring: isRecurring,
     recurrenceFrequency: recurrenceFrequency as RecurrenceFrequency | null,
+    tableBreakdown: tableBreakdown && tableBreakdown.length > 0 ? tableBreakdown : null,
   };
 
-  // If this is a recurring entry, find all occurrences and update them all
-  if (currentEntry.isRecurring) {
-    const occurrences = await findRecurringOccurrences(id, 'event');
-    const occurrenceIds = occurrences.map(o => o.id);
-    
-    // Update all occurrences (including the current one)
-    const allIds = [...new Set([id, ...occurrenceIds])];
-    
-    const { error: updateError } = await supabase
-      .from('Entry')
-      .update(updateData)
-      .in('id', allIds);
-
-    if (updateError) {
-      console.error('Recurring entries update failed:', updateError);
-      return { ok: false, error: updateError.message };
-    }
-
-    // Revalidate all affected dates
-    const datesToRevalidate = new Set<string>();
-    if (dateStr) datesToRevalidate.add(dateStr);
-    occurrences.forEach(occ => {
-      if (occ.Day?.dateISO) {
-        const date = new Date(occ.Day.dateISO);
-        datesToRevalidate.add(formatYmd(date));
-      }
-    });
-    
-    datesToRevalidate.forEach(date => {
-      revalidatePath(`/day/${date}`);
-    });
+  const applyToRecurring = formData.get('applyToRecurring') as string | null;
+  if (currentItem.isRecurring && applyToRecurring === 'all') {
+    const { occurrences } = await findRecurringOccurrences(id, 'event');
+    const allIds = [...new Set([id, ...occurrences.map(o => o.id)])];
+    const byGroup = currentItem.recurrenceGroupId
+      ? supabase.from('ProgramItem').update(updateData).eq('recurrenceGroupId', currentItem.recurrenceGroupId)
+      : (() => {
+          const q = supabase.from('ProgramItem').update(updateData);
+          return allIds.length > 0 ? q.in('id', allIds) : q.eq('id', id);
+        })();
+    const { error: updateError } = await byGroup;
+    if (updateError) return { ok: false, error: updateError.message };
+    const datesToRevalidate = new Set<string>(dateStr ? [dateStr] : []);
+    occurrences.forEach(occ => { if (occ.Day?.dateISO) datesToRevalidate.add(formatYmd(new Date(occ.Day.dateISO))); });
+    datesToRevalidate.forEach(d => revalidatePath(`/day/${d}`));
     revalidatePath(`/`);
-    
     return { ok: true, count: allIds.length };
-  } else {
-    // Single entry update
-    const { error: updateError } = await supabase
-      .from('Entry')
-      .update(updateData)
-      .eq('id', id);
-
-    if (updateError) {
-      console.error('Entry update failed:', updateError);
-      return { ok: false, error: updateError.message };
-    }
-
-    if (dateStr) {
-      revalidatePath(`/day/${dateStr}`);
-    }
+  }
+  if (currentItem.isRecurring && applyToRecurring !== 'all') {
+    const { error: updateError } = await supabase.from('ProgramItem').update(updateData).eq('id', id);
+    if (updateError) return { ok: false, error: updateError.message };
+    if (dateStr) revalidatePath(`/day/${dateStr}`);
     revalidatePath(`/`);
     return { ok: true };
   }
+  const { error: updateError } = await supabase.from('ProgramItem').update(updateData).eq('id', id);
+  if (updateError) return { ok: false, error: updateError.message };
+  if (dateStr) revalidatePath(`/day/${dateStr}`);
+  revalidatePath(`/`);
+  return { ok: true };
 }
 
 export async function updateReservationEntry(formData: FormData): Promise<ActionResponse> {
@@ -1183,9 +741,12 @@ export async function updateReservationEntry(formData: FormData): Promise<Action
 
   const dateStr = formData.get("date") as string | null;
   const guestCount = formData.get('guestCount');
+  const programItemIdStr = formData.get('eventEntryId') as string | null;
+  const programItemId = programItemIdStr && Number.isFinite(Number(programItemIdStr)) ? Number(programItemIdStr) : null;
+  const tableIndexStr = formData.get('tableIndex') as string | null;
+  const tableIndex = tableIndexStr !== null && tableIndexStr !== '' && Number.isFinite(Number(tableIndexStr)) ? Number(tableIndexStr) : null;
 
-  // Update entry - direct field mapping
-  const updateData: EntryUpdate = {
+  const updateData: ReservationUpdate = {
     guestName: (formData.get('guestName') as string) || null,
     phoneNumber: (formData.get('phoneNumber') as string) || null,
     email: (formData.get('email') as string) || null,
@@ -1194,10 +755,12 @@ export async function updateReservationEntry(formData: FormData): Promise<Action
     endTime: (formData.get('endTime') as string) || null,
     notes: (formData.get('notes') as string) || null,
     isTourOperator: formData.get('isTourOperator') === 'on',
+    programItemId: programItemId ?? null,
+    tableIndex: tableIndex !== null ? tableIndex : null,
   };
 
   const { error: updateError } = await supabase
-    .from('Entry')
+    .from('Reservation')
     .update(updateData)
     .eq('id', id);
 
@@ -1206,23 +769,6 @@ export async function updateReservationEntry(formData: FormData): Promise<Action
     return { ok: false, error: updateError.message };
   }
 
-  if (dateStr) {
-    revalidatePath(`/day/${dateStr}`);
-  }
-  revalidatePath(`/`);
-  return { ok: true };
-}
-
-export async function deletePDJGroup(formData: FormData): Promise<ActionResponse> {
-  if (!(await isEditor())) return { ok: false };
-  const idStr = formData.get("id") as string;
-  const dateStr = formData.get("date") as string | null;
-  const id = Number(idStr);
-  if (!Number.isFinite(id)) {
-    return { ok: false };
-  }
-
-  await supabase.from('Entry').delete().eq('id', id);
   if (dateStr) {
     revalidatePath(`/day/${dateStr}`);
   }
@@ -1390,9 +936,8 @@ export async function createHotelBooking(formData: FormData): Promise<ActionResp
       const guestCountStr = formData.get(reservationGuestCountKey) as string;
       const startTime = formData.get(reservationStartTimeKey) as string | null;
       const endTime = formData.get(reservationEndTimeKey) as string | null;
-      const entryData: EntryInsert = {
+      const reservationData: ReservationInsert = {
         dayId: day.id,
-        type: 'reservation',
         hotelBookingId: bookingId,
         guestName: booking.guestName,
         guestCount: guestCountStr ? Number(guestCountStr) : null,
@@ -1403,8 +948,8 @@ export async function createHotelBooking(formData: FormData): Promise<ActionResp
       };
 
       const { error: entryError } = await supabase
-        .from('Entry')
-        .insert(entryData);
+        .from('Reservation')
+        .insert(reservationData);
 
       if (entryError) {
         console.error('Reservation entry insert failed:', entryError);
@@ -1505,11 +1050,7 @@ export async function updateHotelBooking(formData: FormData): Promise<ActionResp
     .delete()
     .eq('hotelBookingId', id);
 
-  await supabase
-    .from('Entry')
-    .delete()
-    .eq('hotelBookingId', id)
-    .eq('type', 'reservation');
+  await supabase.from('Reservation').delete().eq('hotelBookingId', id);
 
   // Recreate breakfast configurations for relevant days
   const breakfastDays = getBreakfastDays(checkInDate, checkOutDate);
@@ -1619,9 +1160,8 @@ export async function updateHotelBooking(formData: FormData): Promise<ActionResp
     // Only create reservation if guest count is provided and > 0
     const guestCount = guestCountStr ? Number(guestCountStr) : 0
     if (guestCount > 0) {
-      const entryData: EntryInsert = {
+      const reservationData: ReservationInsert = {
         dayId: day.id,
-        type: 'reservation',
         hotelBookingId: id,
         guestName: updatedBooking?.guestName || null,
         guestCount: guestCount,
@@ -1631,19 +1171,9 @@ export async function updateHotelBooking(formData: FormData): Promise<ActionResp
         isTourOperator: updatedBooking?.isTourOperator || false,
       };
 
-      const { error: entryError } = await supabase
-        .from('Entry')
-        .insert(entryData);
+      const { error: entryError } = await supabase.from('Reservation').insert(reservationData);
 
       if (entryError) {
-        console.error('Reservation entry insert failed:', entryError);
-        // Check if the error is about missing hotelBookingId column
-        if (entryError.message.includes('hotelBookingId') || entryError.message.includes('schema cache')) {
-          return { 
-            ok: false, 
-            error: `Migration de base de données non appliquée. Veuillez exécuter la migration 20260122_add_hotel_booking_id_to_entry.sql. Erreur : ${entryError.message}` 
-          };
-        }
         return { ok: false, error: `Échec de la création de la réservation pour ${formReservationDate} : ${entryError.message}` };
       }
     }

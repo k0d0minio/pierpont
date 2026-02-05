@@ -1,20 +1,15 @@
 "use client"
 
 import { Coffee, Users } from 'lucide-react'
-import type { BreakfastConfiguration, HotelBooking, Entry } from '@/types/supabase'
+import type { BreakfastConfiguration, HotelBooking, Reservation } from '@/types/supabase'
 
 type BreakfastConfigWithRelations = BreakfastConfiguration & {
   hotelBooking?: HotelBooking;
 }
 
-type EntryWithRelations = Entry & {
-  venueType?: unknown;
-  poc?: unknown;
-}
-
 type DaySummaryCardProps = {
   breakfastConfigs: BreakfastConfigWithRelations[];
-  reservationEntries: EntryWithRelations[];
+  reservationEntries: Reservation[];
   totalBreakfastGuests: number;
   totalReservationGuests: number;
 }
