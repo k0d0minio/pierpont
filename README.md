@@ -47,7 +47,7 @@ Create a `.env.local` file with the following variables:
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-NEXT_PUBLIC_EDIT_CODE=your_admin_password
+EDIT_CODE=your_admin_password
 ```
 
 ## Development
