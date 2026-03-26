@@ -39,7 +39,7 @@ export async function checkAuthStatus(): Promise<AuthStatusResponse> {
 export async function enableEditMode(formData: FormData): Promise<ActionResponse> {
   try {
     const code = formData.get("code");
-    const expected = process.env.NEXT_PUBLIC_EDIT_CODE || "";
+    const expected = process.env.EDIT_CODE || "";
     
     if (!expected) {
       return { ok: false, error: "Erreur de configuration du serveur" };
@@ -51,7 +51,8 @@ export async function enableEditMode(formData: FormData): Promise<ActionResponse
     
     const c = await cookies();
     c.set(COOKIE_NAME, "1", { 
-      httpOnly: false, 
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
       sameSite: "lax", 
       path: "/",
       maxAge: 60 * 60 * 24 // 24 hours
