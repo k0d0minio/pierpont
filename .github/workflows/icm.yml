@@ -1,0 +1,32 @@
+# Pointer file. The checks are in .icm/_system/ci/check.sh.
+name: icm
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited, ready_for_review]
+  push:
+    branches: [main, master]
+permissions:
+  contents: read
+jobs:
+  icm-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: bash .icm/_system/ci/check.sh
+  # The check icm-gate is a check run that this job writes: "Waits for the operator"
+  # (action_required) until the tick of Ready to merge, success after it. The job passes.
+  icm-gate-read:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash .icm/_system/ci/check.sh --gate-report
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}

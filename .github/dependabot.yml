@@ -1,0 +1,16 @@
+# The repo owns this file. The blueprint writes it one time.
+# Security updates only: open-pull-requests-limit 0 stops the version updates. A security
+# update does not count toward that limit. Turn on "Dependabot security updates" in
+# Settings → Code security (the setup stub .icm/setup/dependabot-security.md).
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
